@@ -1,0 +1,148 @@
+<!DOCTYPE html>  
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+    
+        fieldset {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: white;
+            width: auto;
+        }
+    
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+    
+        input {
+            width: auto;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    
+        /* For gender section alignment */
+        .gender-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+    
+        .gender-group label {
+            margin-left: 10px;
+            font-weight: normal;
+        }
+    
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+    
+        /* Centering checkbox and label */
+        .checkbox-group {
+            display: flex;
+            justify-content: start;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+    
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #f41509;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+    
+        button:hover {
+            background-color: #37ea0a;
+        }
+        .device-label::before {
+            content: "It's a PC device";
+            color: #4312e7;
+            font-size: 14px;
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        
+        @media (max-width: 768px) {
+            .device-label::before {
+                content: "It's a Tablet device";
+            }
+        }
+
+        @media (max-width: 480px) {
+            .device-label::before {
+                content: "It's a Mobile device";
+            }
+        }
+
+
+    </style>
+    
+</head>
+
+<body>
+    <fieldset class="Sample">
+        <form action="/submit" method="POST">
+            <h2>Registration</h2>
+            <label for="Username">User Name</label>
+            <input required type="text" id="Username" placeholder="Full name"><br>
+            <label for="email">E-mail</label>
+            <input required type="email" id="email" placeholder="Mail"><br>
+            <label for="password">Password</label>
+            <input required type="password" id="password" placeholder="Strong Password"><br>
+            <label>File Upload</label>
+            <input type="file" id="fileload"><br>
+            <label for="date">Date</label>
+            <input type="date" id="date"><br>
+
+            <!-- Gender Selection -->
+            <div class="gender-group">
+                <label> Gender:</label><br>
+
+                <label for="m">Male</label>
+                <input type="radio" id="m" name="Gender">
+                <label for="f">Female</label>
+                <input type="radio" id="f" name="Gender">
+                <label for="o">Other</label>
+                <input type="radio" id="o" name="Gender">
+            </div>
+
+            <!-- Checkbox Group -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="terms" required>
+                <label for="terms">Agree to terms and conditions</label>
+            </div>
+
+            <button>Submit</button>
+            <div class="device-label"></div>
+
+        </form>
+    </fieldset>
+</body>
+</html>

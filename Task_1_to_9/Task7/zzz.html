@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexedDB CRUD App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #form {
+            margin-bottom: 20px;
+        }
+        #itemList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #itemList li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>IndexedDB CRUD Application</h1>
+
+    <div id="form">
+        <input type="text" id="name" placeholder="Enter Name" required />
+        <input type="number" id="age" placeholder="Enter Age" required />
+        <button onclick="app.addItem()">Add Item</button>
+        <button onclick="app.updateItem()">Update Item</button>
+    </div>
+
+    <h2>Items List</h2>
+    <ul id="itemList"></ul>
+
+    <script>
+        class IndexedDBApp {
+            constructor(dbName, table) {
+                this.dbName = dbName;
+                this.table = table;
+                this.db = null;
+                this.initDB();
+            }
+
+            initDB() {
+                const request = indexedDB.open(this.dbName, 1);
+
+                request.onupgradeneeded = (event) => {
+                    this.db = event.target.result;
+                    if (!this.db.objectStoreNames.contains(this.table)) {
+                        this.db.createObjectStore(this.table, { keyPath: "id", autoIncrement: true });
+                        console.log(this.db.objectStoreNames);
+                        console.log(this.db.objectStoreNames.contains(this.table));
+                        console.log(objectStoreNames.contains(this.table));
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    this.displayItems();
+                };
+
+                request.onerror = (event) => {
+                    console.error("Database error:", event.target.errorCode);
+                };
+            }
+
+            addItem() {
+                const name = document.getElementById("name").value;
+                const age = parseInt(document.getElementById("age").value);
+
+                if (name && age) {
+                    const transaction = this.db.transaction(this.table, "readwrite");
+                    const store = transaction.objectStore(this.table);
+                    const request = store.add({ name, age });
+
+                    request.onsuccess = () => {
+                        this.displayItems();
+                        this.clearForm();
+                    };
+                } else {
+                    alert("Please enter both name and age.");
+                }
+            }
+
+            displayItems() {
+                const transaction = this.db.transaction(this.table, "readonly");
+                const store = transaction.objectStore(this.table);
+                const request = store.getAll();
+
+                request.onsuccess = (event) => {
+                    const itemList = document.getElementById("itemList");
+                    itemList.innerHTML = "";
+
+                    event.target.result.forEach((item) => {
+                        const listItem = document.createElement("li");
+                        listItem.innerHTML = `
+                            <span>${item.name} - Age: ${item.age}</span>
+                            <button onclick="app.editItem(${item.id})">Edit</button>
+                            <button onclick="app.deleteItem(${item.id})">Delete</button>
+                        `;
+                        itemList.appendChild(listItem);
+                    });
+                };
+            }
+
+            editItem(id) {
+                const request = this.db.transaction(this.table, "readonly").objectStore(this.table).get(id);
+
+                request.onsuccess = (event) => {
+                    const item = event.target.result;
+                    document.getElementById("name").value = item.name;
+                    document.getElementById("age").value = item.age;
+                    document.getElementById("name").dataset.id = id;
+                };
+            }
+
+            updateItem() {
+                const id = parseInt(document.getElementById("name").dataset.id);
+                const name = document.getElementById("name").value;
+                const age = parseInt(document.getElementById("age").value);
+
+                if (name && age && id) {
+                    const transaction = this.db.transaction(this.table, "readwrite");
+                    const store = transaction.objectStore(this.table);
+                    const request = store.put({ id, name, age });
+
+                    request.onsuccess = () => {
+                        this.displayItems();
+                        this.clearForm();
+                    };
+                } else {
+                    alert("Please select an item to update.");
+                }
+            }
+
+            deleteItem(id) {
+                const request = this.db.transaction(this.table, "readwrite").objectStore(this.table).delete(id);
+                request.onsuccess = () => this.displayItems();
+            }
+
+            clearForm() {
+                document.getElementById("name").value = '';
+                document.getElementById("age").value = '';
+                delete document.getElementById("name").dataset.id;
+            }
+        }
+
+        const app = new IndexedDBApp("CRUD_Database", "items");
+    </script>
+</body>
+</html>

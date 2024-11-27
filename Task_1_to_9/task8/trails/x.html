@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free City and State Autocomplete</title>
+</head>
+<body>
+    <h1>Select Your City and State</h1>
+    
+    <input id="locationInput" type="text" placeholder="Enter city and state">
+    <ul id="suggestions" style="list-style-type: none;"></ul>
+
+    <script>
+        document.getElementById('locationInput').addEventListener('input', function () {
+            const query = this.value;
+            if (query.length > 2) { // Limit API calls for performance
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const suggestions = document.getElementById('suggestions');
+                        suggestions.innerHTML = ''; // Clear previous results
+                        data.forEach((place) => {
+                            // Only display cities with states (if available)
+                            if (place.type === 'city' || place.type === 'town' || place.type === 'village') {
+                                const li = document.createElement('li');
+                                li.textContent = `${place.display_name}`;
+                                li.addEventListener('click', () => {
+                                    document.getElementById('locationInput').value = place.display_name;
+                                    suggestions.innerHTML = '';
+                                });
+                                suggestions.appendChild(li);
+                            }
+                        });
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

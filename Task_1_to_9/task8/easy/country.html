@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> Manage Country </title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class = "flex justify-center items-center min-h-screen  bg-gray-200">
+  <div class="flex-1 " >
+  <div class="bg-gray-100 border-4 border-blue-800 w-96 p-5 rounded-md flex flex-col h-auto max-h-[450px] m-5 md:max-w-[375px]">
+    <h1 class="text-blue-800 text-center text-3xl mb-4">Country</h1>
+    <div class="flex items-center mb-2">
+    <label class="flex-1 text-lg mr-2 text-left font-semibold" for="country">Country Name :</label>
+    <div class="flex-2">
+    <input type="text" id="country" name="country" placeholder="Country Name" class="w-full p-1 border border-gray-300 rounded" /><br>
+    </div>
+    </div>
+
+    <div id="btn" class="flex items-center mb-2">
+    <button onclick="country.addCountry()" class="text-white bg-green-500 w-full py-2 text-lg rounded hover:bg-green-700"  >Add Country</button>
+    </div>
+  </div>
+  </div>
+<div class="flex-auto mr-2 text-center">
+  <button onclick="page.open_register()" class="text-white bg-green-500 w-1/4 py-2 text-lg rounded hover:bg-green-700"  >Register User</button>
+  <button onclick="page.open_country()" class="text-white bg-green-500 w-1/4 py-2 text-lg rounded hover:bg-green-700"  >Add Country</button>
+  <button onclick="page.open_state()" class="text-white bg-green-500 w-1/4 py-2 text-lg rounded hover:bg-green-700"  >Add State</button>
+
+  <h2 class="text-blue-800 text-center text-3xl mb-4">Records</h2>
+  <table class="table-auto border border-gray-300 bg-gray-100 w-full" id="country_list"></table>
+</div>
+  <script src="country.js"></script>
+  <script src="page.js"></script>
+</body>
+</html>

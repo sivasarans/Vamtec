@@ -1,0 +1,46 @@
+body {
+    margin: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+fieldset {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 20px;
+}
+
+label {
+    display: block;
+    font-style: italic;
+    font-weight: bold;
+}
+
+input {
+    width: 90%;
+    margin-bottom: 10px;
+    font-size: 14px;
+    border: none;
+    padding: 10px;
+    border-bottom: #4CAF50 2px solid;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    border: none;
+    border: #4b34cb 3px solid;
+    border-radius: 20px;
+}
+
+button:hover {
+    background-color: aqua;
+}
+
+h3 {
+    font-weight: bold;
+    color: rgb(108, 50, 234);
+}

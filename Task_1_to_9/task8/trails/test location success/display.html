@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Display Location</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="display.js" defer></script>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100">
+    <div class="bg-white shadow-md rounded-lg p-8">
+        <h2 class="text-2xl font-bold mb-4 text-center">Create Location</h2>
+        <table id="locationTable" class="table-auto w-full text-center mb-4 hidden">
+            <thead>
+                <tr>
+                    <th class="border px-4 py-2">Country</th>
+                    <th class="border px-4 py-2">State</th>
+                    <th class="border px-4 py-2">City</th>
+                    <th class="border px-4 py-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="border px-4 py-2" id="countryCell"></td>
+                    <td class="border px-4 py-2" id="stateCell"></td>
+                    <td class="border px-4 py-2" id="cityCell"></td>
+                    <td class="border px-4 py-2">
+                        <button id="removeButton" class="text-red-500 hover:text-red-700">🗑️</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button id="actionButton" class="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold">Create</button>
+    </div>
+</body>
+</html>

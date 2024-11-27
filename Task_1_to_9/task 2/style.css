@@ -1,0 +1,39 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+
+fieldset {
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    width: 300px;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.gender-group, .checkbox-group {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+button {
+    background-color: #ed1703;
+    color: #fff;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}

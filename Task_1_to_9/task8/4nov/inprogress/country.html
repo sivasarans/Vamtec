@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-4">Country Management</h2>
+        
+        <!-- Country Form -->
+        <div class="mb-4">
+            <label for="countryName" class="block text-sm font-medium text-gray-700">Country Name</label>
+            <input type="text" id="countryName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+        </div>
+        <button onclick="addCountry()" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-4">Add Country</button>
+
+        <!-- Country Table -->
+        <table class="w-full text-left table-auto border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="px-4 py-2 border">ID</th>
+                    <th class="px-4 py-2 border">Country Name</th>
+                    <th class="px-4 py-2 border">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="countryTable">
+                <!-- Dynamic Rows Will Be Added Here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        class Database {
+            constructor(dbName, version) {
+                this.dbName = dbName;
+                this.version = version;
+                this.db = null;
+            }
+    
+            open() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        db.createObjectStore("countries", { keyPath: "id", autoIncrement: true });
+                        db.createObjectStore("states", { keyPath: "id", autoIncrement: true });
+                        db.createObjectStore("users", { keyPath: "id", autoIncrement: true });
+                    };
+                    request.onsuccess = (event) => {
+                        this.db = event.target.result;
+                        resolve(this.db);
+                    };
+                    request.onerror = (event) => {
+                        reject(event.target.error);
+                    };
+                });
+            }
+    
+            getAll(storeName) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([storeName], "readonly");
+                    const store = transaction.objectStore(storeName);
+                    const request = store.getAll();
+                    request.onsuccess = (event) => {
+                        resolve(event.target.result);
+                    };
+                    request.onerror = (event) => {
+                        reject(event.target.error);
+                    };
+                });
+            }
+    
+            addItem(storeName, item) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([storeName], "readwrite");
+                    const store = transaction.objectStore(storeName);
+                    const request = store.add(item);
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+    
+            updateItem(storeName, item) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([storeName], "readwrite");
+                    const store = transaction.objectStore(storeName);
+                    const request = store.put(item);
+                    request.onsuccess = () => resolve();
+                    request.onerror = (event) => reject(event.target.error);
+                });
+            }
+        }
+    
+        class CountryManager {
+            constructor(db) {
+                this.db = db;
+            }
+    
+            async loadCountries() {
+                const countries = await this.db.getAll("countries");
+                const countrySelect = document.getElementById("countrySelect");
+                countrySelect.innerHTML = '<option value="">Choose a country</option>'; // Reset options
+                countries.forEach(country => {
+                    const option = document.createElement("option");
+                    option.value = country.id;
+                    option.textContent = `${country.name} (${country.code})`; // Displaying country name and code
+                    countrySelect.appendChild(option);
+                });
+            }
+    
+            async addCountry(countryName, countryCode) {
+                const country = { name: countryName, code: countryCode };
+                await this.db.addItem("countries", country);
+                await this.loadCountries(); // Refresh countries list
+            }
+        }
+    
+        class StateManager {
+            constructor(db) {
+                this.db = db;
+            }
+    
+            async loadStates(countryId) {
+                const states = await this.db.getAll("states");
+                const stateSelect = document.getElementById("stateSelect");
+                stateSelect.innerHTML = '<option value="">Choose a state</option>'; // Reset options
+                states.filter(state => state.countryId === countryId).forEach(state => {
+                    const option = document.createElement("option");
+                    option.value = state.id;
+                    option.textContent = state.name;
+                    stateSelect.appendChild(option);
+                });
+            }
+    
+            async addState(stateName, countryId) {
+                const state = { name: stateName, countryId: countryId };
+                await this.db.addItem("states", state);
+                await this.loadStates(countryId); // Refresh states list
+            }
+        }
+    
+        class UserManager {
+            constructor(db) {
+                this.db = db;
+            }
+    
+            async registerUser(userData) {
+                await this.db.addItem("users", userData);
+                alert("User registered successfully!");
+            }
+    
+            async loadUsers() {
+                const users = await this.db.getAll("users");
+                const userTableBody = document.getElementById("userTableBody");
+                userTableBody.innerHTML = ''; // Clear the table body
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    ["id", "name", "organization", "mobile", "email", "numUsers", "country", "state", "expiryDate"].forEach(field => {
+                        row.innerHTML += `<td class="py-2 px-4 border-b editable-cell" data-id="${user.id}" data-field="${field}" data-value="${user[field]}">
+                        ${user[field]} <span class="edit-icon cursor-pointer ml-2 text-blue-500 hidden">✏️</span> </td>`;
+                    });
+                    userTableBody.appendChild(row);
+                });
+                this.addEditListeners();
+            }
+    
+            addEditListeners() {
+                document.querySelectorAll('.editable-cell').forEach(cell => {
+                    cell.addEventListener('mouseenter', () => {
+                        cell.querySelector('.edit-icon').classList.remove('hidden');
+                    });
+                    cell.addEventListener('mouseleave', () => {
+                        cell.querySelector('.edit-icon').classList.add('hidden');
+                    });
+                    cell.addEventListener('click', (event) => {
+                        if (event.target.classList.contains('edit-icon')) {
+                            const field = cell.dataset.field;
+                            const userId = cell.dataset.id;
+                            const currentValue = cell.dataset.value;
+    
+                            cell.innerHTML = '';
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = currentValue;
+                            input.className = 'p-2 border border-grey-300 rounded w-full';
+    
+                            input.addEventListener('blur', () => {
+                                this.updateUserField(userId, field, input.value);
+                            });
+                            input.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter') {
+                                    this.updateUserField(userId, field, input.value);
+                                }
+                            });
+                            cell.appendChild(input);
+                            input.focus();
+                        }
+                    });
+                });
+            }
+    
+            async updateUserField(userId, field, newValue) {
+                const user = await this.db.getAll("users").then(users => users.find(u => u.id == userId));
+                user[field] = newValue;
+                await this.db.updateItem("users", user);
+                await this.loadUsers(); // Refresh user list
+            }
+        }
+    
+        async function initializeApp() {
+            const db = new Database("MyDatabase", 1);
+            await db.open();
+    
+            const countryManager = new CountryManager(db);
+            const stateManager = new StateManager(db);
+            const userManager = new UserManager(db);
+    
+            // Load countries and users on page load
+            await countryManager.loadCountries();
+            await userManager.loadUsers();
+    
+            // Country Form Submission
+            document.getElementById("countryForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const countryName = document.getElementById("countryName").value;
+                const countryCode = document.getElementById("countryCode").value; // Capture country code
+                countryManager.addCountry(countryName, countryCode);
+            });
+    
+            // State Form Submission
+            document.getElementById("stateForm").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const countryId = document.getElementById("countrySelect").value;
+                const stateName = document.getElementById("stateName").value;
+                stateManager.addState(stateName, countryId);
+            });
+    
+            // User Registration Form Submission
+            document.getElementById("formsubmit").addEventListener("submit", function(event) {
+                event.preventDefault();
+                const expireDays = parseInt(document.getElementById("expireDays").value);
+                let expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + expireDays);
+                expiryDate = expiryDate.toISOString().split('T')[0];
+    
+                const userData = {
+                    name: document.getElementById("name").value,
+                    organization: document.getElementById("organization").value,
+                    email: document.getElementById("email").value,
+                    numUsers: document.getElementById("numUsers").value,
+                    password: document.getElementById("password").value,
+                    mobile: document.getElementById("mobile").value,
+                    country: document.getElementById("countrySelect").value,
+                    state: document.getElementById("stateSelect").value,
+                    expiryDate: expiryDate,
+                };
+    
+                userManager.registerUser(userData);
+            });
+        }
+    
+        window.onload = initializeApp;
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex flex-col items-center">
+    <div class="text-center mb-5">
+        <h1 class="text-3xl font-bold mb-5">User Management</h1>
+        <a href="addcountry.html">
+            <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-4">Add Country</button>
+        </a>
+        <a href="addstate.html">
+            <button class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 mb-4">Add State</button>
+        </a>
+        <a href="register.html">
+            <button class="bg-purple-500 text-white font-bold py-2 px-4 rounded hover:bg-purple-600">Register User</button>
+        </a>
+    </div>
+    <div class="w-full max-w-4xl mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">Registered Users</h2>
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="py-3 px-4 border-b">ID</th>
+                    <th class="py-3 px-4 border-b">Name</th>
+                    <th class="py-3 px-4 border-b">Organization</th>
+                    <th class="py-3 px-4 border-b">Mobile</th>
+                    <th class="py-3 px-4 border-b">Email</th>
+                    <th class="py-3 px-4 border-b">Num Users</th>
+                    <th class="py-3 px-4 border-b">Country</th>
+                    <th class="py-3 px-4 border-b">State</th>
+                    <th class="py-3 px-4 border-b">Expiry</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- User data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let dbUsers;
+
+        // Open the user database
+        const requestUsers = indexedDB.open("UserDB", 1);
+
+        requestUsers.onupgradeneeded = function(event) {
+            const db = event.target.result;
+            const objectStore = db.createObjectStore("users", { keyPath: "id", autoIncrement: true });
+            objectStore.createIndex("email", "email", { unique: true });
+        };
+
+        requestUsers.onsuccess = function(event) {
+            dbUsers = event.target.result;
+            loadUsers();
+        };
+
+        requestUsers.onerror = function(event) {
+            console.error("Database error: ", event.target.error);
+        };
+
+        // Load users from IndexedDB into the table
+        function loadUsers() {
+            const transaction = dbUsers.transaction(["users"], "readonly");
+            const objectStore = transaction.objectStore("users");
+            const request = objectStore.getAll();
+
+            request.onsuccess = function(event) {
+                const users = event.target.result;
+                const userTableBody = document.getElementById("userTableBody");
+                userTableBody.innerHTML = ''; // Clear existing data
+
+                const currentDate = new Date();
+
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    row.className = "hover:bg-gray-100";
+
+                    // Calculate the difference in days between current date and expiry date
+                    const expiryDate = new Date(user.expiryDate);
+                    const timeDiff = expiryDate - currentDate;
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)); // Convert milliseconds to days
+
+                    let expiryClass = '';
+                    if (daysDiff < 7) {
+                        expiryClass = 'bg-red-500 text-white';
+                    } else if (daysDiff < 10) {
+                        expiryClass = 'bg-orange-500 text-white';
+                    } else {
+                        expiryClass = 'bg-green-100 text-black';
+                    }
+
+                    row.innerHTML = `
+                        <td class="py-2 px-4 border-b">${user.id}</td>
+                        <td class="py-2 px-4 border-b">${user.name}</td>
+                        <td class="py-2 px-4 border-b">${user.organization}</td>
+                        <td class="py-2 px-4 border-b">${user.mobile}</td>
+                        <td class="py-2 px-4 border-b">${user.email}</td>
+                        <td class="py-2 px-4 border-b">${user.numUsers}</td>
+                        <td class="py-2 px-4 border-b">${user.countryId}</td>
+                        <td class="py-2 px-4 border-b">${user.stateId}</td>
+                        <td class="py-2 px-4 border-b ${expiryClass}">${user.expiryDate} (${daysDiff} days left)</td>
+                    `;
+
+                    userTableBody.appendChild(row);
+                });
+            };
+        }
+    </script>
+</body>
+</html>

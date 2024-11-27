@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="typescript.js" defer></script>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="w-full max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-3xl bg-white p-8 rounded-lg shadow-lg">
+        <form class="space-y-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800">Login</h2>
+
+            <div>
+                <label for="UserName" class="block text-sm font-medium text-gray-700">User Name</label>
+                <input id="UserName" type="text" placeholder="Enter your username" required
+                    class="mt-1 block w-full px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input id="password" type="password" placeholder="Enter your password" required
+                    class="mt-1 block w-full px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600">
+            </div>
+
+            <button type="button" onclick="app.add()"
+                class="w-full px-4 py-2 text-white bg-green-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-blue-400">Login</button>
+            
+            <div class="device-label text-center text-sm text-gray-500"></div>
+        </form>
+    </div>
+</body>
+
+<script >
+    class App{
+        constructor(dbname,tbname){
+            this.dbname = dbname;
+            this.tbname = tbname;
+            this.datada = null;
+            this.initializeDB();
+
+        }
+        initializeDB(){
+            const x = indexedDB.open(this.dbname, 1);
+            x.onupgradeneeded=(e)=>{this.datada =e.target.result;
+            if (!this.datada.objectStoreNames.contains(this.tbname)){
+                this.datada.createObjectStore(this.tbname,{ keyPath:"id", autoIncrement: true})}}
+                x.onsuccess=(e)=>{this.datada=e.target.result; this.display()}
+                x.onerror=(e)=>{console.log("error in db",e.target.errorCode)}}
+
+        add(){
+            const name = document.getElementById("UserName").value;
+            const password = document.getElementById("password").value;
+            const email = document.getElementById("email").value;
+            const 
+            const x = this.datada.transaction([this.tbname],"readwrite").objectStore(this.tbname).add({name,password});
+            x.onsuccess = (e) => { alert("success");            }
+            x.onerror = (e) => { console.log("error in add", e.target.errorCode);}
+        }
+        display(){
+            const x = this.datada.transaction([this.tbname],"readonly").objectStore(this.tbname).getAll();
+            x.onsuccess = (e) => {const data = e.target.result;
+                console.log(data);
+            }
+            x.onerror = (e) => { console.log("error in display", e.target.errorCode);}
+        }
+    }
+    const app = new App("db_1","tb_1")
+</script>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <script src="scripts.jsx"></script>
+
+    <style>
+        body {
+            background-color: rgb(237, 232, 226);
+            font-family: Arial, sans-serif;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+
+        fieldset {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%; 
+            padding: 10px;
+            background-color: #ed1703;
+            color: rgb(3, 255, 24);
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            color: #f7f5f5;
+        }
+
+        .device-label::before {
+            content: "It's a PC device";
+            color: #3c00ff;
+            font-size: 14px;
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Media Queries for Responsive Design */
+        @media (max-width: 1024px) {
+            .device-label::before {
+                content: "It's a Tablet device";
+            }
+        }
+
+        @media (max-width: 768px) {
+            .device-label::before {
+                content: "It's a Mobile device";
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                font-size: 12px;
+                padding: 8px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .device-label::before {
+                content: "It's a Small Mobile device";
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                font-size: 12px;
+                padding: 8px;
+            }
+
+            button {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .device-label::before {
+                content: "Extra Small Mobile";
+            }
+
+            fieldset {
+                padding: 15px;
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                font-size: 10px;
+                padding: 6px;
+            }
+
+            button {
+                font-size: 12px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <fieldset class="Sample">
+        <form >
+            <h2> Login</h2>
+
+            <label for="UserName">User Name</label>
+            <input id="UserName" class="x" type="text" placeholder="Enter your username" required><br>
+
+            <label for="password">Password</label>
+            <input id="password" class="x" type="password" placeholder="Enter your password" required><br>
+
+            <button type="button" onclick="xx(); storage(event);">Login</button>
+            <div class="device-label"></div>
+        </form>
+    </fieldset>
+</body>
+</html>

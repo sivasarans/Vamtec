@@ -1,0 +1,62 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+
+fieldset {
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    width: 300px;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.gender-group, .checkbox-group {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+button {
+    background-color: #ed1703;
+    color: #fff;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Default styling for PC */
+.device-label::before {
+    content: "It's a PC device";
+    color: #333;
+    font-size: 14px;
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Tablet view styling */
+@media (max-width: 768px) {
+    .device-label::before {
+        content: "It's a Tablet device";
+    }
+}
+
+/* Mobile view styling */
+@media (max-width: 480px) {
+    .device-label::before {
+        content: "It's a Mobile device";
+    }
+}

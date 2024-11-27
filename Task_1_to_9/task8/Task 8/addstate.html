@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add State</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-96">
+        <button type="button" class="rounded border-gray-300 bg-gray-500 text-white p-2 mb-4  "> <a href="main.html"> Back </a></button>
+        <h2 class="text-2xl font-bold mb-4">Add State</h2>
+        <form id="stateForm">
+            <div class="mb-4">
+                <label for="countrySelect" class="block text-sm font-medium text-gray-700">Select Country</label>
+                <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                    <option value="">Choose a country</option>
+                </select>
+            </div>
+            <div class="mb-4" id="stateInputDiv" style="display: block;">
+                <label for="stateName" class="block text-sm font-medium text-gray-700">State Name</label>
+                <input type="text" id="stateName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <button type="submit" id="submitButton" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600" style="display: block;">Submit</button>
+        </form>
+    </div>
+    <script >
+// Open the countries database
+const requestCountries = indexedDB.open("CountryDB", 1); const kit = (id) => document.getElementById(id);
+requestCountries.onsuccess = (e)=>{
+    const request = e.target.result.transaction(["countries"], "readonly").objectStore("countries").getAll();
+    request.onsuccess = (event)=> {
+        const countrySelect = kit("countrySelect");
+        event.target.result.forEach(i => {
+            const option = document.createElement("option");
+            option.value = i.id;  option.textContent = i.name;
+            countrySelect.appendChild(option);        });}}
+requestCountries.onerror = (e)=> {alert("Database error: ", e.target.error);};
+
+const requestStates = indexedDB.open("StateDB", 1); let dbStates;
+requestStates.onupgradeneeded = function(event) {
+    const objectStore = event.target.result.createObjectStore("states", { keyPath: "id", autoIncrement: true });}
+    requestStates.onsuccess = (e) => dbStates = e.target.result 
+requestStates.onerror = (e)=> {alert("Database error: ", e.target.error); };
+
+kit("stateForm").addEventListener("submit", function(event) {   // Handle form submission
+    event.preventDefault();
+    const countryId = kit("countrySelect").value, stateName = kit("stateName").value;
+    const state = { countryId: countryId, name: stateName };
+    const request = dbStates.transaction("states", "readwrite").objectStore("states").add(state); 
+    request.onsuccess = ()=> { alert("State added successfully!"); kit("stateForm").reset(); }// Reset state input display /Reset submit button display
+    request.onerror = ()=> { console.error("Error adding state: ", request.error);    };});
+    </script>
+</body>
+</html>

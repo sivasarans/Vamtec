@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Form</title>
+    <style>
+        body {
+            margin: 0px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        fieldset {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+        }
+
+        label {
+            display: block;
+            font-style: italic;
+            font-weight: bold;
+            
+        }
+
+        input {
+            width: 90%;
+            margin-bottom: 10px;
+
+            font-size: 14px;
+            border: none;
+            padding: 10px;
+            border-bottom: #4CAF50 2px solid;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            border: none ;
+            border: #4b34cb 3px solid;
+            border-radius: 20px;
+
+        }
+
+
+        button:hover{
+            background-color: aqua;
+        }
+        h3{
+            font-weight: bold;
+            color: rgb(108, 50, 234);
+        }
+    </style>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent form submission
+    
+            // Get form values
+            const userId = document.getElementById('x').value;
+            const password = document.getElementById('y').value;
+    
+            // Store data in Session Storage
+            sessionStorage.setItem('userId', userId);
+            sessionStorage.setItem('password', password);
+    
+            // Store data in Local Storage
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('password', password);
+    
+            // Set Cookies (expires in 1 day)
+            document.cookie = `userId=${userId}; path=/; max-age=${24 * 60 * 60}`;
+            document.cookie = `password=${password}; path=/; max-age=${24 * 60 * 60}`;
+    
+            alert("Data saved in Session Storage, Local Storage, and Cookies.");
+        });
+    </script>
+    
+</head>
+<body>
+    <fieldset>
+        <form method="post" id="loginForm">
+            <div>
+                <h3> Login</h3>
+            <label for="x">ID</label>
+            <input type="text" id="x" placeholder="Enter User ID" required>
+
+            <label for="y">Password</label>
+            <input type="password" id="y" placeholder="Password" required>
+
+            <button type="submit">Login</button>
+        </div>
+        </form>
+    </fieldset>
+
+
+
+
+</body>
+</html>

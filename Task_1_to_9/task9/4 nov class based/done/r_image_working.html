@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 flex flex-col items-center">
+    <div class="text-center mb-5">
+        <h1 class="text-3xl font-bold mb-5">Registered Users</h1>
+        <div class="flex justify-center gap-4 flex-wrap">
+            <a href="c.html">
+                <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-4">Add Country</button>
+            </a>
+            <a href="s.html">
+                <button class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 mb-4">Add State</button>
+            </a>
+        </div>
+    </div>
+
+    <div class="flex flex-col space-y-4 w-full max-w-4xl mx-auto p-4">
+        <form id="formsubmit" class="bg-white p-6 rounded-lg shadow-md">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block mt-2">User Name</label>
+                    <input id="name" type="text" placeholder="Enter your name" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="organization" class="block mt-2">Organization</label>
+                    <input id="organization" type="text" placeholder="Enter your organization" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="email" class="block mt-2">E-mail</label>
+                    <input id="email" type="email" placeholder="Enter your email" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="password" class="block mt-2">Password</label>
+                    <input id="password" type="password" placeholder="Enter your password" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="numUsers" class="block mt-2">Number of Users</label>
+                    <input type="number" id="numUsers" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="mobile" class="block mt-2">Mobile Number</label>
+                    <input id="mobile" placeholder="Enter Mobile" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="countrySelect" class="block mt-2">Select Country</label>
+                    <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Choose Country</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="imageUpload" class="block mb-2">Upload Image:</label>
+                    <input id="imageUpload" type="file" accept="image/*" class="block w-full mb-4 p-2 border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label for="expireDays" class="block mt-2">Expire Days</label>
+                    <input type="number" id="expireDays" class="mt-1 block w-full p-2 border border-green-200 rounded-md">
+                </div>
+
+                <div>
+                    <label for="stateSelect" class="block mt-2">Select State</label>
+                    <select id="stateSelect" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Choose State</option>
+                    </select>
+                </div>
+
+                <div class="col-span-full">
+                    <button id="submit" type="submit" class="border border-green-200 text-black bg-purple-500 m-3 p-3 rounded-md w-full">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">User List</h2>
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="py-3 px-4 border-b">ID</th>
+                    <th class="py-3 px-4 border-b">Name</th>
+                    <th class="py-3 px-4 border-b">Organization</th>
+                    <th class="py-3 px-4 border-b">Mobile</th>
+                    <th class="py-3 px-4 border-b">Email</th>
+                    <th class="py-3 px-4 border-b">Num Users</th>
+                    <th class="py-3 px-4 border-b">Country</th>
+                    <th class="py-3 px-4 border-b">State</th>
+                    <th class="py-3 px-4 border-b">Expiry</th>
+                    <th class="py-3 px-4 border-b">Image</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- User data will populate here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        class UserRegistration {
+            constructor() {
+                this.dbName = "CountryDB";
+                this.initDB();
+                this.setupEventListeners();
+            }
+    
+            initDB() {
+                const request = indexedDB.open(this.dbName, 1);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    db.createObjectStore("countries", { keyPath: "id" });
+                    db.createObjectStore("states", { keyPath: "id" });
+                    db.createObjectStore("Users_list", { keyPath: "id", autoIncrement: true });
+                };
+    
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    this.loadCountries();
+                    this.loadUsers();
+                };
+    
+                request.onerror = (event) => {
+                    console.error("Database error: ", event.target.error);
+                };
+            }
+    
+            loadCountries() {
+                const transaction = this.db.transaction(["countries"], "readonly");
+                const objectStore = transaction.objectStore("countries");
+                const request = objectStore.getAll();
+    
+                request.onsuccess = (event) => {
+                    const countrySelect = document.getElementById("countrySelect");
+                    event.target.result.forEach(country => {
+                        const option = document.createElement("option");
+                        option.value = country.id;
+                        option.textContent = country.name;
+                        countrySelect.appendChild(option);
+                    });
+                    console.log("Countries loaded successfully");
+                };
+            }
+    
+            setupEventListeners() {
+                document.getElementById("countrySelect").addEventListener("change", (event) => {
+                    this.loadStates(event.target.value);
+                });
+    
+                document.getElementById("formsubmit").addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    this.saveUserData();
+                });
+            }
+    
+            loadStates(countryId) {
+                const transaction = this.db.transaction(["states"], "readonly");
+                const objectStore = transaction.objectStore("states");
+                const request = objectStore.getAll();
+    
+                request.onsuccess = (event) => {
+                    const stateSelect = document.getElementById("stateSelect");
+                    stateSelect.innerHTML = '<option value="">Choose a state</option>'; // Reset state options
+                    event.target.result
+                        .filter(state => state.countryId === countryId)
+                        .forEach(state => {
+                            const option = document.createElement("option");
+                            option.value = state.id;
+                            option.textContent = state.name;
+                            stateSelect.appendChild(option);
+                        });
+                    console.log("States updated successfully");
+                };
+            }
+    
+            saveUserData() {
+                const getElement = (id) => document.getElementById(id);
+                const imageFile = getElement("imageUpload").files[0];
+                const reader = new FileReader();
+    
+                const userData = {
+                    name: getElement("name").value,
+                    organization: getElement("organization").value,
+                    email: getElement("email").value,
+                    numUsers: getElement("numUsers").value,
+                    password: getElement("password").value,
+                    mobile: getElement("mobile").value,
+                    countryId: getElement("countrySelect").value,
+                    stateId: getElement("stateSelect").value,
+                    expireDays: getElement("expireDays").value,
+                    image: null
+                };
+    
+                if (imageFile) {
+                    reader.onloadend = () => {
+                        userData.image = reader.result;
+                        this.storeUserData(userData);
+                    };
+                    reader.readAsDataURL(imageFile);
+                } else {
+                    this.storeUserData(userData);
+                }
+            }
+    
+            storeUserData(userData) {
+                const transaction = this.db.transaction(["Users_list"], "readwrite");
+                const objectStore = transaction.objectStore("Users_list");
+                const request = objectStore.add(userData);
+    
+                request.onsuccess = () => {
+                    console.log("User added successfully");
+                    this.loadUsers();
+                    document.getElementById("formsubmit").reset();
+                };
+    
+                request.onerror = (event) => {
+                    console.error("Error adding user: ", event.target.error);
+                };
+            }
+    
+            loadUsers() {
+                const transaction = this.db.transaction(["Users_list"], "readonly");
+                const objectStore = transaction.objectStore("Users_list");
+                const request = objectStore.getAll();
+    
+                request.onsuccess = (event) => {
+                    this.populateUserTable(event.target.result);
+                    this.addEditListeners(); // Add listeners after populating table
+                };
+            }
+    
+            populateUserTable(users) {
+                const userTableBody = document.getElementById("userTableBody");
+                userTableBody.innerHTML = ""; // Clear existing rows
+
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="py-3 px-4 border-b">${user.id}</td>
+                        <td class="py-3 px-4 border-b" data-field="name" data-id="${user.id}">${user.name}</td>
+                        <td class="py-3 px-4 border-b" data-field="organization" data-id="${user.id}">${user.organization}</td>
+                        <td class="py-3 px-4 border-b" data-field="mobile" data-id="${user.id}">${user.mobile}</td>
+                        <td class="py-3 px-4 border-b" data-field="email" data-id="${user.id}">${user.email}</td>
+                        <td class="py-3 px-4 border-b" data-field="numUsers" data-id="${user.id}">${user.numUsers}</td>
+                        <td class="py-3 px-4 border-b" data-field="country" data-id="${user.id}">${user.countryId}</td>
+                        <td class="py-3 px-4 border-b" data-field="state" data-id="${user.id}">${user.stateId}</td>
+                        <td class="py-3 px-4 border-b" data-field="expireDays" data-id="${user.id}">${user.expireDays}</td>
+                        <td class="py-3 px-4 border-b">
+                            <img src="${user.image}" alt="User Image" class="w-16 h-16 object-cover">
+                        </td>
+                    `;
+                    userTableBody.appendChild(row);
+                });
+            }
+    
+            addEditListeners() {
+                const tableCells = document.querySelectorAll("#userTableBody td[data-field]");
+                tableCells.forEach(cell => {
+                    cell.addEventListener("mouseenter", () => {
+                        cell.classList.add("bg-gray-200");
+                    });
+                    cell.addEventListener("mouseleave", () => {
+                        cell.classList.remove("bg-gray-200");
+                    });
+                    cell.addEventListener("click", () => this.editCell(cell));
+                });
+            }
+    
+            editCell(cell) {
+                const originalText = cell.textContent;
+                const field = cell.dataset.field;
+                const id = cell.dataset.id;
+    
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = originalText;
+                input.className = "border border-gray-300 rounded-md p-1 w-full";
+                cell.innerHTML = "";
+                cell.appendChild(input);
+                input.focus();
+    
+                input.addEventListener("blur", () => {
+                    const newValue = input.value;
+                    cell.textContent = newValue; // Update cell text
+    
+                    this.updateUserField(id, field, newValue); // Update user data in DB
+                });
+    
+                input.addEventListener("keypress", (event) => {
+                    if (event.key === "Enter") {
+                        input.blur(); // Trigger blur event to save
+                    }
+                });
+            }
+    
+            updateUserField(id, field, newValue) {
+                const transaction = this.db.transaction(["Users_list"], "readwrite");
+                const objectStore = transaction.objectStore("Users_list");
+                const request = objectStore.get(id);
+    
+                request.onsuccess = (event) => {
+                    const user = event.target.result;
+                    if (user) {
+                        user[field] = newValue; // Update the specified field
+                        const updateRequest = objectStore.put(user);
+    
+                        updateRequest.onsuccess = () => {
+                            console.log(`User ${field} updated successfully`);
+                        };
+                        updateRequest.onerror = (event) => {
+                            console.error("Error updating user: ", event.target.error);
+                        };
+                    }
+                };
+            }
+        }
+    
+        document.addEventListener("DOMContentLoaded", () => {
+            new UserRegistration();
+        });
+    </script>
+</body>
+</html>

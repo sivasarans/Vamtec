@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Registered Users</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex flex-col items-center">
+    <div class="text-center mb-5">
+        <h1 class="text-3xl font-bold mb-5">Registered Users</h1>
+        <a href="addcountry.html">
+            <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-4">Add Country</button>
+        </a>
+        <a href="addstate.html">
+            <button class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 mb-4">Add State</button>
+        </a>
+        <a href="register.html">
+            <button class="bg-purple-500 text-white font-bold py-2 px-4 rounded hover:bg-purple-600">Register User</button>
+        </a>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">User List</h2>
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="py-3 px-4 border-b">ID</th>
+                    <th class="py-3 px-4 border-b">Name</th>
+                    <th class="py-3 px-4 border-b">Organization</th>
+                    <th class="py-3 px-4 border-b">Mobile</th>
+                    <th class="py-3 px-4 border-b">Email</th>
+                    <th class="py-3 px-4 border-b">Num Users</th>
+                    <th class="py-3 px-4 border-b">Country</th>
+                    <th class="py-3 px-4 border-b">State</th>
+                    <th class="py-3 px-4 border-b">Expiry</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"><!-- User data will populate here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let dbUsers;
+        const requestUsers = indexedDB.open("Registered_Users", 1);
+        requestUsers.onsuccess = (e) => { dbUsers = e.target.result; loadUsers()};
+function loadUsers() {
+    const userTableBody = document.getElementById("userTableBody");
+    const store = dbUsers.transaction(["Users_list"], "readonly").objectStore("Users_list");
+    store.getAll().onsuccess = (e) => { userTableBody.innerHTML = '';
+        e.target.result.forEach(user => {
+        const row = document.createElement("tr"); row.className = "hover:bg-gray-100";
+        ["id", "name", "organization", "mobile", "email", "numUsers", "country", "state", "expiryDate"].forEach(field => {
+        row.innerHTML += ` <td class="py-2 px-4 border-b editable-cell" data-id="${user.id}" data-field="${field}" data-value="${user[field]}">
+        ${user[field]} <span class="edit-icon cursor-pointer ml-2 text-blue-500 hidden">✏️</span> </td>`;
+        });userTableBody.appendChild(row)});addEditListeners()}}
+
+function addEditListeners() {
+document.querySelectorAll('.editable-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', () => { cell.querySelector('.edit-icon').classList.remove('hidden') });
+    cell.addEventListener('mouseleave', () => {cell.querySelector('.edit-icon').classList.add('hidden')});
+    cell.addEventListener('click', (event)=> {
+        if (event.target.classList.contains('edit-icon')) {
+            const field = cell.dataset.field, userId = cell.dataset.id, currentValue = cell.dataset.value;
+            cell.innerHTML = ''; const input = document.createElement('input');
+            input.type = 'text'; input.value = currentValue; input.className = 'p-2 border border-grey-300 rounded w-full';
+            input.addEventListener('blur', ()=> { updateUserField(userId, field, input.value)});  input.addEventListener('keydown', (e)=>  {if (e.key === 'Enter') { updateUserField(userId, field, input.value)  }});
+            cell.appendChild(input); input.focus();
+        }})})}       
+
+function updateUserField(userId, field, newValue) {
+    const final = dbUsers.transaction(["Users_list"], "readwrite").objectStore("Users_list");
+    final.get(Number(userId)).onsuccess = (e) =>{ const user = e.target.result; user[field] = newValue;
+    final.put(user) .onsuccess = ()=> loadUsers() }}
+            </script> </body> </html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>  
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Form</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- <script src="scripts.js"></script> -->
+
+    <script src="scripts.js" defer></script> <!-- incase console error for html before js run-->
+</head>
+
+<body>
+    <fieldset>
+        <form id="RegistervalidateAndStorage" action="/submit" >
+            <h2 >Registration</h2>
+            <label for="Username">User Name</label>
+            <input  type="text" id="Username" placeholder="Full name" ><br>
+            <label for="email">E-mail</label>
+            <input type="email" class="m" id="email" placeholder="Mail"><br>
+            <label for="password">Password</label>
+            <input  type="password" id="password" placeholder="Strong Password"><br>
+            <label>File Upload</label>
+            <input type="file" id="fileload" onchange="fileValidation(this)"><br>
+            <label for="date">Date</label>
+            <input type="date" id="date"><br>
+
+            <!-- Gender Selection -->
+            <div class="gender-group">
+                <label class="gender-label">Gender:</label>
+                <label for="m"><input type="radio" id="m" name="Gender" value="Male"> Male</label>
+                <label for="f"><input type="radio" id="f" name="Gender" value="Female"> Female</label>
+                <label for="o"><input type="radio" id="o" name="Gender" value="Other"> Other</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="terms" required>
+                <label for="terms">Agree to terms and conditions</label>
+            </div>
+            <button type="submit">Submit</button>
+            <div class="device-label"></div>
+        </form>
+    </fieldset>
+</body>
+</html>

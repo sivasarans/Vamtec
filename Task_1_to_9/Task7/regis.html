@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="typescript.js" defer></script>
+
+</head>
+
+<body class="flex justify-center items-center bg-[#37542f58]">
+    <fieldset class="border-4 border-[#11ef4c7a] rounded-2xl p-7 bg-[#2d3b27] w-full max-w-md">
+        <h2 class="text-white text-2xl text-center mb-4 shadow-lg">Registration</h2>
+        <form id="RegistervalidateAndStorage" action="/submit">
+            <label for="Username" class="block mb-2 font-bold text-[#53e82e]">User Name</label>
+            <input type="text" id="Username" placeholder="Full name" class="w-full p-2 mb-4 border-2 border-[#3eef08] rounded-md">
+
+            <label for="email" class="block mb-2 font-bold text-[#53e82e]">E-mail</label>
+            <input type="email" id="email" placeholder="Mail" class="w-full p-2 mb-4 border-2 border-[#3eef08] rounded-md">
+
+            <label for="password" class="block mb-2 font-bold text-[#53e82e]">Password</label>
+            <input type="password" id="password" placeholder="Strong Password" class="w-full p-2 mb-4 border-2 border-[#3eef08] rounded-md">
+
+            <label class="block mb-2 font-bold text-[#53e82e]">File Upload</label>
+            <input type="file" id="fileload" onchange="fileValidation(this)" class="w-full mb-4 p-2 border-2 border-[#3eef08] rounded-md">
+
+            <label for="date" class="block mb-2 font-bold text-[#53e82e]">Date</label>
+            <input type="date" id="date" class="w-full mb-4 p-2 border-2 border-[#3eef08] rounded-md">
+
+            <!-- Gender Selection -->
+            <div class="flex justify-between items-center mb-4">
+                <label class="font-bold text-[#53e82e]">Gender:</label>
+                <div>
+                    <label for="m" class="flex items-center mr-4">
+                        <input type="radio" id="m" name="Gender" value="Male" class="mr-1"> Male
+                    </label>
+                    <label for="f" class="flex items-center mr-4">
+                        <input type="radio" id="f" name="Gender" value="Female" class="mr-1"> Female
+                    </label>
+                    <label for="o" class="flex items-center">
+                        <input type="radio" id="o" name="Gender" value="Other" class="mr-1"> Other
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="terms" required class="w-5 h-5 mr-2">
+                <label for="terms" class="font-bold text-[#53e82e]">Agree to terms and conditions</label>
+            </div>
+
+            <button type="submit " onclick="app.add()" class="w-full p-3 bg-red-600 text-white rounded-full hover:bg-green-600">Submit</button>
+            <div class="text-center text-[#a490e7] mt-2 device-label"></div>
+            <table id="data-table" class="min-w-full border-collapse border border-gray-300 bg-white mt-4">
+                <thead>
+                    <tr>
+                        <th class="border border-gray-300 p-2">Username</th>
+                        <th class="border border-gray-300 p-2">Email</th>
+                        <th class="border border-gray-300 p-2">Password</th>
+                        <th class="border border-gray-300 p-2">Date</th>
+                        <th class="border border-gray-300 p-2">Gender</th>
+                        <th class="border border-gray-300 p-2">Terms</th>
+                        <th class="border border-gray-300 p-2">File</th>
+                    </tr>
+                </thead>
+                <tbody id="list">
+                    <!-- Data will be dynamically inserted here -->
+                </tbody>
+            </table>
+            
+        </form>
+    </fieldset>
+</body>
+
+</html>

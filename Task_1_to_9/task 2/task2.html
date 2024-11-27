@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body {
+            background-color: rgb(237, 232, 226);
+            font-family: Arial, sans-serif;
+            display: flex; 
+            justify-content: center;
+        }
+
+        fieldset {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        label {
+            display: flex;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 90%;
+            padding: 10px 0px 10px 20px;
+            margin-bottom: 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%; /* */
+            padding: 10px;
+            background-color: #ed1703;
+            color: rgb(3, 255, 24);
+            border-radius: 20px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            color: #f7f5f5;
+        }
+    </style>
+</head>
+<body>
+    <fieldset class="Sample">
+        <label for="UserName">User Name</label>
+        <input id="UserName" type="text" placeholder="Enter your username"><br>
+
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Enter your password"><br>
+
+        <button type="submit">Login</button>
+    </fieldset>
+</body>
+</html>

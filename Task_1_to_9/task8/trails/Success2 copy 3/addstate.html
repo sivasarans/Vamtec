@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add State</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-4">Add State</h2>
+        <form id="stateForm">
+            <div class="mb-4">
+                <label for="countrySelect" class="block text-sm font-medium text-gray-700">Select Country</label>
+                <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                    <option value="">Choose a country</option>
+                </select>
+            </div>
+            <div class="mb-4" id="stateInputDiv" style="display: none;">
+                <label for="stateName" class="block text-sm font-medium text-gray-700">State Name</label>
+                <input type="text" id="stateName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <button type="submit" id="submitButton" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600" style="display: none;">Submit</button>
+        </form>
+    </div>
+    <script >
+        // state-script.js
+let dbCountries, dbStates;
+
+// Open the countries database
+const requestCountries = indexedDB.open("CountryDB", 1);
+
+requestCountries.onsuccess = function(event) {
+    dbCountries = event.target.result;
+    loadCountries();
+};
+
+requestCountries.onerror = function(event) {
+    console.error("Database error: ", event.target.error);
+};
+
+// Load countries from IndexedDB into the dropdown
+function loadCountries() {
+    const transaction = dbCountries.transaction(["countries"], "readonly");
+    const objectStore = transaction.objectStore("countries");
+    const request = objectStore.getAll();
+
+    request.onsuccess = function(event) {
+        const countries = event.target.result;
+        const countrySelect = document.getElementById("countrySelect");
+
+        countries.forEach(country => {
+            const option = document.createElement("option");
+            option.value = country.id;
+            option.textContent = country.name;
+            countrySelect.appendChild(option);
+        });
+    };
+}
+
+// Handle country selection
+document.getElementById("countrySelect").addEventListener("change", function() {
+    const stateInputDiv = document.getElementById("stateInputDiv");
+    const submitButton = document.getElementById("submitButton");
+
+    if (this.value) {
+        stateInputDiv.style.display = "block"; // Show state input
+        submitButton.style.display = "block"; // Show submit button
+    } else {
+        stateInputDiv.style.display = "none"; // Hide state input
+        submitButton.style.display = "none"; // Hide submit button
+    }
+});
+
+// Open (or create) the states database
+const requestStates = indexedDB.open("StateDB", 1);
+
+requestStates.onupgradeneeded = function(event) {
+    dbStates = event.target.result;
+    const objectStore = dbStates.createObjectStore("states", { keyPath: "id", autoIncrement: true });
+    objectStore.createIndex("countryId", "countryId", { unique: false });
+};
+
+requestStates.onsuccess = function(event) {
+    dbStates = event.target.result;
+};
+
+requestStates.onerror = function(event) {
+    console.error("Database error: ", event.target.error);
+};
+
+// Handle form submission
+document.getElementById("stateForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const countryId = document.getElementById("countrySelect").value;
+    const stateName = document.getElementById("stateName").value;
+
+    const transaction = dbStates.transaction(["states"], "readwrite");
+    const objectStore = transaction.objectStore("states");
+
+    const state = {
+        countryId: countryId,
+        name: stateName
+    };
+
+    const request = objectStore.add(state);
+
+    request.onsuccess = function() {
+        alert("State added successfully!");
+        document.getElementById("stateForm").reset();
+        document.getElementById("stateInputDiv").style.display = "none"; // Reset state input display
+        document.getElementById("submitButton").style.display = "none"; // Reset submit button display
+    };
+
+    request.onerror = function() {
+        console.error("Error adding state: ", request.error);
+    };
+});
+
+    </script>
+</body>
+</html>

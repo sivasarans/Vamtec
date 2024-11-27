@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-800">
+
+<div class="m-4 text-center">
+  <button onclick="page.open_register()" class="text-white bg-blue-600 w-1/4 py-2 text-lg rounded hover:bg-blue-700">Add User</button>
+  <button onclick="page.open_country()" class="text-white bg-blue-600 w-1/4 py-2 text-lg rounded hover:bg-blue-700">Add Country</button>
+  <button onclick="page.open_state()" class="text-white bg-blue-600 w-1/4 py-2 text-lg rounded hover:bg-blue-700">Add State</button>
+
+  <div id="register_form" class="flex justify-center items-center min-h-screen">
+    <div class="bg-gray-400 border-4 border-green-300 w-full p-5 rounded-md flex flex-col h-auto max-h-[450px] m-5 md:max-w-[375px] shadow-lg">
+      <h1 class="text-blue-900 text-center text-3xl mb-4">Registration Form</h1>
+
+      <!-- Two input fields per row -->
+      <div class="flex items-center mb-2">
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="name">Name :</label>
+        <input type="text" id="name" name="Name" placeholder="Full Name" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="organization">Organization :</label>
+        <input type="text" id="organization" name="organization" placeholder="Organization Name" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" />
+      </div>
+
+      <div class="flex items-center mb-2">
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="mobile_no">Mobile No :</label>
+        <input type="number" id="mobile_no" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" name="mobile_no" placeholder="Mobile No" />
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="email">E-mail :</label>
+        <input type="email" id="email" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" name="e-mail" placeholder="Email Address" />
+      </div>
+
+      <div class="flex items-center mb-2">
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="pass">Password :</label>
+        <input type="password" id="pass" name="password" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" />
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="file">Photo :</label>
+        <input type="file" id="file" name="file" class="w-1/2 p-1 border border-gray-400 rounded-full" />
+      </div>
+
+      <div class="flex items-center mb-2">
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="users">Number of Users :</label>
+        <input type="number" id="users" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" name="users" placeholder="No of users" />
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="country">Country :</label>
+        <select name="country" id="country" onchange="user.displayState()" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600"></select>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="state">State :</label>
+        <select name="state" id="state" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600"></select>
+        <label class="flex-1 text-lg mr-2 text-left font-semibold text-gray-700" for="expire_days">Expire Days :</label>
+        <input type="number" id="expire_days" class="w-1/2 p-2 border border-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600" name="expire_days" placeholder="Expire Days" />
+      </div>
+
+      <div id="btn" class="flex items-center mb-2">
+        <button onclick="user.addUser()" class="text-white bg-blue-600 w-full py-2 text-lg rounded-full hover:bg-blue-700" value="Register">Register</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="text-white text-center text-3xl mb-4">User Details</h2>
+  <table class="table-auto border border-gray-200 bg-white w-full">
+    <thead>
+      <tr>        
+        <th class="border-2 border-green-300 px-4 py-2">Organization</th>
+        <th class="border-2 border-green-300 px-4 py-2">Photo</th>
+        <th class="border-2 border-green-300 px-4 py-2">Name</th>
+        <th class="border-2 border-green-300 px-4 py-2">Mobile No</th>
+        <th class="border-2 border-green-300 px-4 py-2">Email</th>
+        <th class="border-2 border-green-300 px-4 py-2">No of Users</th>
+        <th class="border-2 border-green-300 px-4 py-2">State</th>
+        <th class="border-2 border-green-300 px-4 py-2">Country</th>
+        <th class="border-2 border-green-300 px-4 py-2">Expire Date</th>
+        <th class="border-2 border-green-300 px-4 py-2">Edit</th>
+        <th class="border-2 border-green-300 px-4 py-2">Delete</th>
+      </tr>
+    </thead>
+    <tbody id="itemList">
+      <!-- User data will populate here -->
+    </tbody>
+  </table>
+</div>
+<script src="register.js"></script>
+<script src="page.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Handling</title>
+</head>
+<body>
+
+    <fieldset class="Sample">
+        <form>
+            <h2>Workout</h2>
+            <label for="UserName">User Name</label>
+            <input class="x" type="text" placeholder="Enter your username" required><br>
+            <p id="sample1">Waiting for data (5 sec ) Loading.................</p>
+            <p id="sample2" >Time : </p>
+        </form>
+    </fieldset>
+
+    <script> // Event handling
+        function x(event) {console.log(`Username input field was clicked.`);
+        }
+        function y(event) {console.log(`Mouse is hovering over the username input field.`);
+        }
+        const summa = document.querySelector(".x");
+        summa.addEventListener("click", x);
+        summa.addEventListener("mouseover", y); 
+    </script>
+
+
+
+    <script> // ASYNCHRONOUS Timeout function will be executed after 3 seconds
+        function fetchData(siva) {
+            setTimeout(() => {
+                const data = { name: "Alice", age: 25 }; 
+                siva(data); 
+            }, 3000);
+        }
+    
+        function display(data) {
+            document.getElementById("sample1").innerHTML = `Name: ${data.name}, Age: ${data.age}`;
+        }
+    
+        fetchData(display);
+    </script>
+
+    <script> //setinterval ASYNCHRONOUS
+        setInterval( xxx, 1000);
+        function xxx() {
+            let x=new Date();
+            let y=x.getHours() + ":" + x.getMinutes() + ":" + x.getSeconds();
+            document.getElementById("sample2").innerHTML = y
+        }
+
+    
+
+    </script>
+
+</body>
+</html>

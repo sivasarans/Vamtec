@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Registered Users</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex flex-col items-center">
+    <div class="text-center mb-5">
+        <h1 class="text-3xl font-bold mb-5">Registered Users</h1>
+        <a href="addcountry.html">
+            <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 mb-4">Add Country</button>
+        </a>
+        <a href="addstate.html">
+            <button class="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 mb-4">Add State</button>
+        </a>
+        <a href="register.html">
+            <button class="bg-purple-500 text-white font-bold py-2 px-4 rounded hover:bg-purple-600">Register User</button>
+        </a>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-4">User List</h2>
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="py-3 px-4 border-b">ID</th>
+                    <th class="py-3 px-4 border-b">Name</th>
+                    <th class="py-3 px-4 border-b">Organization</th>
+                    <th class="py-3 px-4 border-b">Mobile</th>
+                    <th class="py-3 px-4 border-b">Email</th>
+                    <th class="py-3 px-4 border-b">Num Users</th>
+                    <th class="py-3 px-4 border-b">Country</th>
+                    <th class="py-3 px-4 border-b">State</th>
+                    <th class="py-3 px-4 border-b">Expiry</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- User data will populate here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let dbUsers;
+
+        // Open the IndexedDB for users
+        const requestUsers = indexedDB.open("UserDBSS", 1);
+
+        requestUsers.onsuccess = function(event) {
+            dbUsers = event.target.result;
+            loadUsers();
+        };
+
+        function loadUsers() {
+            const transaction = dbUsers.transaction(["users"], "readonly");
+            const objectStore = transaction.objectStore("users");
+            const request = objectStore.getAll();
+
+            request.onsuccess = function(event) {
+                const users = event.target.result;
+                const userTableBody = document.getElementById("userTableBody");
+                userTableBody.innerHTML = ''; // Clear table before populating
+
+                const currentDate = new Date();
+
+                users.forEach(user => {
+                    const row = document.createElement("tr");
+                    row.className = "hover:bg-gray-100";
+
+                    const expiryDate = new Date(user.expiryDate);
+                    const daysRemaining = Math.ceil((expiryDate - currentDate) / (1000 * 3600 * 24));
+
+                    let expiryClass = '';
+                    if (daysRemaining < 7) {
+                        expiryClass = 'bg-red-500 text-white';
+                    } else if (daysRemaining < 10) {
+                        expiryClass = 'bg-yellow-500 text-white';
+                    } else {
+                        expiryClass = 'bg-green-100 text-black';
+                    }
+
+                    row.innerHTML = `
+                        <td class="py-2 px-4 border-b">${user.id}</td>
+                        ${generateEditableCell("name", user)}
+                        ${generateEditableCell("organization", user)}
+                        ${generateEditableCell("mobile", user)}
+                        ${generateEditableCell("email", user)}
+                        ${generateEditableCell("numUsers", user)}
+                        ${generateEditableCell("country", user)}
+                        ${generateEditableCell("state", user)}
+                        <td class="py-2 px-4 border-b ${expiryClass} relative expiry-cell" data-id="${user.id}">
+                            ${user.expiryDate} (${daysRemaining} days left)
+                        </td>
+                    `;
+
+                    userTableBody.appendChild(row);
+                });
+
+                addEditListeners();
+            };
+        }
+
+        function generateEditableCell(field, user) {
+            return `
+                <td class="py-2 px-4 border-b editable-cell" data-id="${user.id}" data-field="${field}" data-value="${user[field]}">
+                    ${user[field]} 
+                    <span class="edit-icon cursor-pointer ml-2 text-blue-500 hidden">✏️</span>
+                </td>
+            `;
+        }
+
+        function addEditListeners() {
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('mouseenter', () => {
+                    cell.querySelector('.edit-icon').classList.remove('hidden');
+                });
+                cell.addEventListener('mouseleave', () => {
+                    cell.querySelector('.edit-icon').classList.add('hidden');
+                });
+                cell.addEventListener('click', function(event) {
+                    if (event.target.classList.contains('edit-icon')) {
+                        const field = cell.getAttribute('data-field');
+                        const userId = cell.getAttribute('data-id');
+                        const currentValue = cell.getAttribute('data-value');
+                        cell.innerHTML = '';
+
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentValue;
+                        input.className = 'p-2 border border-gray-300 rounded w-full';
+
+                        input.addEventListener('blur', function() {
+                            updateUserField(userId, field, input.value);
+                        });
+
+                        input.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                updateUserField(userId, field, input.value);
+                            }
+                        });
+
+                        cell.appendChild(input);
+                        input.focus();
+                    }
+                });
+            });
+        }
+
+        function updateUserField(userId, field, newValue) {
+            const transaction = dbUsers.transaction(["users"], "readwrite");
+            const objectStore = transaction.objectStore("users");
+
+            const request = objectStore.get(Number(userId));
+            request.onsuccess = function(event) {
+                const user = event.target.result;
+                user[field] = newValue;
+
+                const updateRequest = objectStore.put(user);
+                updateRequest.onsuccess = function() {
+                    loadUsers(); // Reload users to show changes
+                };
+            };
+        }
+    </script>
+</body>
+</html>

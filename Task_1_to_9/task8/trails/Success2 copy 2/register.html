@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register User</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-96">
+        <h2 class="text-2xl font-bold mb-4">Register User</h2>
+        <form id="registerForm">
+            <div class="mb-4">
+                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" id="name" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="organization" class="block text-sm font-medium text-gray-700">Organization</label>
+                <input type="text" id="organization" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile</label>
+                <input type="tel" id="mobile" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="numUsers" class="block text-sm font-medium text-gray-700">Number of Users</label>
+                <input type="number" id="numUsers" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="countrySelect" class="block text-sm font-medium text-gray-700">Select Country</label>
+                <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                    <option value="">Choose a country</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label for="expireDays" class="block text-sm font-medium text-gray-700">Expire Days</label>
+                <input type="number" id="expireDays" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4" id="stateInputDiv" style="display: none;">
+                <label for="stateSelect" class="block text-sm font-medium text-gray-700">Select State</label>
+                <select id="stateSelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                    <option value="">Choose a state</option>
+                </select>
+            </div>
+            <button type="submit" id="submitButton" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600" style="display: none;">Submit</button>
+        </form>
+    </div>
+    <script>
+        let dbCountries, dbStates, dbUsers;
+
+        // Open the countries database
+        const requestCountries = indexedDB.open("CountryDB", 1);
+
+        requestCountries.onsuccess = function(event) {
+            dbCountries = event.target.result;
+            loadCountries();
+        };
+
+        requestCountries.onerror = function(event) {
+            console.error("Database error: ", event.target.error);
+        };
+
+        // Load countries from IndexedDB into the dropdown
+        function loadCountries() {
+            const transaction = dbCountries.transaction(["countries"], "readonly");
+            const objectStore = transaction.objectStore("countries");
+            const request = objectStore.getAll();
+
+            request.onsuccess = function(event) {
+                const countries = event.target.result;
+                const countrySelect = document.getElementById("countrySelect");
+
+                countries.forEach(country => {
+                    const option = document.createElement("option");
+                    option.value = country.id;
+                    option.textContent = country.name;
+                    countrySelect.appendChild(option);
+                });
+            };
+        }
+
+        // Handle country selection
+        document.getElementById("countrySelect").addEventListener("change", function() {
+            const stateInputDiv = document.getElementById("stateInputDiv");
+            const submitButton = document.getElementById("submitButton");
+
+            if (this.value) {
+                loadStates(this.value); // Load states for selected country
+                stateInputDiv.style.display = "block"; // Show state dropdown
+                submitButton.style.display = "block"; // Show submit button
+            } else {
+                stateInputDiv.style.display = "none"; // Hide state dropdown
+                submitButton.style.display = "none"; // Hide submit button
+            }
+        });
+
+        // Load states for the selected country
+        function loadStates(countryId) {
+            const requestStates = indexedDB.open("StateDB", 1); // Open the states database
+
+            requestStates.onsuccess = function(event) {
+                dbStates = event.target.result;
+                const transaction = dbStates.transaction(["states"], "readonly");
+                const objectStore = transaction.objectStore("states");
+                const index = objectStore.index("countryId");
+                const request = index.getAll(countryId);
+
+                const stateSelect = document.getElementById("stateSelect");
+                stateSelect.innerHTML = '<option value="">Choose a state</option>'; // Reset state options
+
+                request.onsuccess = function(event) {
+                    const states = event.target.result;
+
+                    states.forEach(state => {
+                        const option = document.createElement("option");
+                        option.value = state.id;
+                        option.textContent = state.name;
+                        stateSelect.appendChild(option);
+                    });
+                };
+            };
+        }
+
+        // Open the user database
+        const requestUsers = indexedDB.open("UserDB", 1);
+
+        requestUsers.onupgradeneeded = function(event) {
+            const db = event.target.result;
+            const objectStore = db.createObjectStore("users", { keyPath: "id", autoIncrement: true });
+            objectStore.createIndex("email", "email", { unique: true });
+        };
+
+        requestUsers.onsuccess = function(event) {
+            dbUsers = event.target.result;
+        };
+
+        requestUsers.onerror = function(event) {
+            console.error("Database error: ", event.target.error);
+        };
+
+        // Handle form submission
+        document.getElementById("registerForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const userData = {
+                name: document.getElementById("name").value,
+                organization: document.getElementById("organization").value,
+                mobile: document.getElementById("mobile").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value,
+                numUsers: document.getElementById("numUsers").value,
+                countryId: document.getElementById("countrySelect").value,
+                expireDays: document.getElementById("expireDays").value,
+                stateId: document.getElementById("stateSelect").value
+            };
+
+            // Store the user data in IndexedDB
+            const transaction = dbUsers.transaction(["users"], "readwrite");
+            const objectStore = transaction.objectStore("users");
+            const request = objectStore.add(userData);
+
+            request.onsuccess = function() {
+                console.log("User registered successfully:", userData);
+                alert("User registered successfully!");
+
+                // Reset the form after submission
+                document.getElementById("registerForm").reset();
+                document.getElementById("stateInputDiv").style.display = "none"; // Reset state input display
+                document.getElementById("submitButton").style.display = "none"; // Reset submit button display
+            };
+
+            request.onerror = function(event) {
+                console.error("Error storing user data:", event.target.error);
+                alert("Failed to register user. Please try again.");
+            };
+        });
+    </script>
+</body>
+</html>

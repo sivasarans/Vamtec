@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add State</title>
+    <script defer src="state_script.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <button type="button" class="rounded border-gray-300 bg-gray-500 text-white p-2 mb-4"><a href="main.html">Back</a></button>
+        <div class="bg-white p-6 rounded shadow-md mb-8">
+            <h2 class="text-2xl font-bold mb-4">Add State</h2>
+            <form id="stateForm">
+                <div class="mb-4">
+                    <label for="countrySelect" class="block text-sm font-medium text-gray-700">Select Country</label>
+                    <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                        <option value="">Choose a country</option>
+                    </select>
+                </div>
+                <div class="mb-4" id="stateInputDiv">
+                    <label for="stateName" class="block text-sm font-medium text-gray-700">State Name</label>
+                    <input type="text" id="stateName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                </div>
+                <button type="submit" id="submitButton" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">Submit</button>
+            </form>
+        </div>
+        
+        <div class="bg-white p-6 rounded shadow-md">
+            <h2 class="text-2xl font-bold mb-4">State List</h2>
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                        <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">State Name</th>
+                        <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="stateTableBody">
+                    <!-- State data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

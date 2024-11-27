@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-96">
+        <button type="button" class="rounded border-gray-300 bg-gray-500 text-white p-2 mb-4">
+            <a href="r.html">Back</a>
+        </button>
+        <h2 class="text-2xl font-bold mb-4">Country Management</h2>
+        <form id="countryForm">
+            <div class="mb-4">
+                <label for="countryCode" class="block text-sm font-medium text-gray-700">Country Code (Editable)</label>
+                <input type="text" id="countryCode" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="countryName" class="block text-sm font-medium text-gray-700">Country Name</label>
+                <input type="text" id="countryName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <button type="button" onclick="db.addOrUpdateCountry()" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">Add/Update Country</button>
+        </form>
+
+        <h2 class="text-xl font-bold mt-6 mb-4">Countries List</h2>
+        <table class="min-w-full bg-white border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="py-2 border-b text-left">Default ID</th>
+                    <th class="py-2 border-b text-left">Country Code</th>
+                    <th class="py-2 border-b text-left">Country Name</th>
+                    <th class="py-2 border-b text-left">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="countryTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        class CountryDB {
+            constructor() {
+                this.db = null;
+                this.initDB();
+                this.currentId = null; // Track the current editing ID
+            }
+
+            // Initialize IndexedDB
+            initDB() {
+                const request = indexedDB.open("CountryDB", 1);
+                request.onupgradeneeded = (event) => {
+                    this.db = event.target.result;
+                    this.db.createObjectStore("countries", { keyPath: "id", autoIncrement: true });
+                    this.db.createObjectStore("states", { keyPath: "id", autoIncrement: true });
+                    this.db.createObjectStore("Users_list", { keyPath: "id", autoIncrement: true });
+
+
+                };
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    this.loadCountries(); // Load countries on successful DB open
+                };
+                request.onerror = (event) => {
+                    console.error("Database error:", event.target.error);
+                    alert("Error opening database.");
+                };
+            }
+
+            // Add or update a country
+            addOrUpdateCountry() {
+                const countryCode = document.getElementById("countryCode").value.trim();
+                const countryName = document.getElementById("countryName").value.trim();
+
+                if (!countryCode || !countryName) {
+                    alert("Please fill in both fields.");
+                    return;
+                }
+
+                const transaction = this.db.transaction(["countries"], "readwrite");
+                const store = transaction.objectStore("countries");
+                const country = { code: countryCode, name: countryName };
+
+                if (this.currentId === null) {
+                    // Add new country
+                    const request = store.add(country);
+                    request.onsuccess = () => {
+                        alert("Country added successfully.");
+                    };
+                    request.onerror = (event) => {
+                        console.error("Add country error:", event.target.error);
+                        alert("Error adding country. Country Code might already exist.");
+                    };
+                } else {
+                    // Update existing country
+                    const request = store.put({ id: this.currentId, code: countryCode, name: countryName });
+                    request.onsuccess = () => {
+                        alert("Country updated successfully.");
+                        this.currentId = null; // Reset current ID after update
+                    };
+                    request.onerror = (event) => {
+                        console.error("Update country error:", event.target.error);
+                        alert("Error updating country.");
+                    };
+                }
+
+                this.loadCountries(); // Refresh the list
+                document.getElementById("countryForm").reset(); // Clear form
+                this.currentId = null; // Reset for future additions
+            }
+
+            // Load countries from the database and display in the table
+            loadCountries() {
+                const transaction = this.db.transaction(["countries"], "readonly");
+                const store = transaction.objectStore("countries");
+                const request = store.getAll();
+
+                request.onsuccess = (event) => {
+                    this.displayCountries(event.target.result);
+                };
+            }
+
+            // Display countries in the table
+            displayCountries(countries) {
+                const tbody = document.getElementById("countryTableBody");
+                tbody.innerHTML = ""; // Clear existing rows
+
+                countries.forEach(country => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="py-2 border-b">${country.id}</td>
+                        <td class="py-2 border-b">${country.code}</td>
+                        <td class="py-2 border-b">${country.name}</td>
+                        <td class="py-2 border-b">
+                            <button onclick="db.editCountry(${country.id}, '${country.code}', '${country.name}')" class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600">Edit</button>
+                            <button onclick="db.deleteCountry(${country.id})" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Edit a country (populate the form for editing)
+            editCountry(id, code, name) {
+                document.getElementById("countryCode").value = code; // Set Country Code
+                document.getElementById("countryName").value = name; // Set Country Name
+                this.currentId = id; // Set the current editing ID
+            }
+
+            // Delete a country
+            deleteCountry(id) {
+                const transaction = this.db.transaction(["countries"], "readwrite");
+                const store = transaction.objectStore("countries");
+                const request = store.delete(id);
+
+                request.onsuccess = () => {
+                    alert("Country deleted successfully.");
+                    this.loadCountries(); // Refresh the list
+                };
+
+                request.onerror = (event) => {
+                    console.error("Delete country error:", event.target.error);
+                    alert("Error deleting country.");
+                };
+            }
+        }
+
+        // Instantiate the CountryDB class
+        const db = new CountryDB();
+    </script>
+</body>
+</html>

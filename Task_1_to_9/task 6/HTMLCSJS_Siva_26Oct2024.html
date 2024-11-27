@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1 style="text-align: center; color: rgb(250, 113, 193);">JavaScript async / await</h1>
+
+<h3 id="z1" style="text-align: center;"> </h3>
+
+<h3 id="z" style="text-align: center; color: blueviolet;">Wait 5 seconds (5000 milliseconds) for this page to change.</h3>
+
+<script>
+
+setInterval( xxx, 100);
+        function xxx() {
+            let x=new Date();
+            let y="Current Time:  "+x.getHours() + ":" + x.getMinutes() + ":" + x.getSeconds();
+            document.getElementById("z1").innerHTML = y
+        }
+
+
+
+async function y() {
+  let x = new Promise((resolve) =>{
+    setTimeout(function() {resolve("Congraluations !!");}, 5000);
+  });
+  document.getElementById("z").innerHTML = await x;
+}
+y();
+
+
+let request = indexedDB.open("SimpleDB", 1);
+
+request.onupgradeneeded = (e) => // event has passed obj as e
+  e.target.result.createObjectStore("users", { keyPath: "id", autoIncrement: true });
+
+
+  //e.target.result. is a instance
+  //createObjectStore() is a event
+request.onsuccess = (e) => { // event has passed obj as e
+  let store = e.target.result.transaction("users", "readwrite").objectStore("users");
+
+  //e.target.result. is a instance
+  //createObjectStore(), objectStore() is a event  
+  store.add({ name: "Alice", age: 25 }); //store data
+  store.add({ name: "Bob", age: 30 }); //store data
+  console.log("Data added successfully");
+};
+
+</script>
+</body>
+</html>

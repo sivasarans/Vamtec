@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Registration Form with CRUD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="regist.js" defer></script>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100">
+    <fieldset class="border-2 border-green-400 rounded-2xl p-7 bg-gray-800 w-full max-w-md">
+        <h2 class="text-white text-2xl text-center mb-4 font-bold">Registration</h2>
+        <form id="RegistervalidateAndStorage">
+            <label for="Username" class="block mb-2 font-bold text-green-500">User Name</label>
+            <input type="text" id="Username" placeholder="Full name" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="email" class="block mb-2 font-bold text-green-500">E-mail</label>
+            <input type="email" id="email" placeholder="example@mail.com" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="password" class="block mb-2 font-bold text-green-500">Password</label>
+            <input type="password" id="password" placeholder="Enter strong password" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="date" class="block mb-2 font-bold text-green-500">Date</label>
+            <input type="date" id="date" class="w-full mb-4 p-2 border-2 border-green-400 rounded-md text-gray-700">
+
+            <!-- Gender Section -->
+            <div class="mb-4">
+                <span class="font-bold text-green-500 block mb-2">Gender:</span>
+                <div class="flex space-x-4">
+                    <label for="m" class="flex items-center text-white">
+                        <input type="radio" id="m" name="Gender" value="Male" class="mr-2"> Male
+                    </label>
+                    <label for="f" class="flex items-center text-white">
+                        <input type="radio" id="f" name="Gender" value="Female" class="mr-2"> Female
+                    </label>
+                    <label for="o" class="flex items-center text-white">
+                        <input type="radio" id="o" name="Gender" value="Other" class="mr-2"> Other
+                    </label>
+                </div>
+            </div>
+
+            <!-- Add Country Button -->
+            <div class="mb-4">
+                <button type="button" id="addCountryButton" class="border-green-400 text-white border-2 rounded-2xl p-2 mb-2">
+                    Add Country
+                </button>
+                <div id="countryDetails" class="text-white mt-4 hidden">
+                    <p>Country: <span id="displayCountry"></span></p>
+                    <p>State: <span id="displayState"></span></p>
+                    <p>City: <span id="displayCity"></span></p>
+                </div>
+            </div>
+
+            <input type="hidden" id="hiddenCountry" name="country">
+            <input type="hidden" id="hiddenState" name="state">
+            <input type="hidden" id="hiddenCity" name="city">
+
+            <button type="submit" class="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Submit</button>
+        </form>
+    </fieldset>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get('username');
+            const email = urlParams.get('email');
+            const password = urlParams.get('password');
+            const date = urlParams.get('date');
+            const gender = urlParams.get('gender');
+            const country = urlParams.get('country');
+            const state = urlParams.get('state');
+            const city = urlParams.get('city');
+
+            if (username) document.getElementById('Username').value = username;
+            if (email) document.getElementById('email').value = email;
+            if (password) document.getElementById('password').value = password;
+            if (date) document.getElementById('date').value = date;
+            if (gender) document.querySelector(`input[name="Gender"][value="${gender}"]`).checked = true;
+
+            if (country && state && city) {
+                document.getElementById('hiddenCountry').value = country;
+                document.getElementById('hiddenState').value = state;
+                document.getElementById('hiddenCity').value = city;
+                document.getElementById('displayCountry').textContent = country;
+                document.getElementById('displayState').textContent = state;
+                document.getElementById('displayCity').textContent = city;
+                document.getElementById('countryDetails').classList.remove('hidden');
+            }
+
+            document.getElementById('addCountryButton').addEventListener('click', () => {
+                const formData = new URLSearchParams({
+                    username: document.getElementById('Username').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value,
+                    date: document.getElementById('date').value,
+                    gender: document.querySelector('input[name="Gender"]:checked')?.value || ''
+                });
+                window.location.href = `country.html?${formData}`;
+            });
+        });
+    </script>
+</body>
+</html>

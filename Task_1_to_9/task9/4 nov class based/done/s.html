@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add/Update State</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-96">
+        <button type="button" class="rounded border-gray-300 bg-gray-500 text-white p-2 mb-4">
+            <a href="r.html"> Back </a>
+        </button>
+        <h2 class="text-2xl font-bold mb-4">Add/Update State</h2>
+        <form id="stateForm" onsubmit="event.preventDefault();">
+            <div class="mb-4">
+                <label for="countrySelect" class="block text-sm font-medium text-gray-700">Select Country</label>
+                <select id="countrySelect" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+                    <option value="">Choose a country</option>
+                </select>
+            </div>
+            <div class="mb-4" id="stateInputDiv" style="display: block;">
+                <label for="stateName" class="block text-sm font-medium text-gray-700">State Name</label>
+                <input type="text" id="stateName" class="mt-1 block w-full p-2 border border-gray-300 rounded" required>
+            </div>
+            <button type="button" onclick="stateManager.addOrUpdateState()" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">Add/Update State</button>
+        </form>
+        <h2 class="text-xl font-bold mt-4">States List</h2>
+        <table id="statesTable" class="min-w-full mt-2 border border-gray-300">
+            <thead>
+                <tr>
+                    <th class="border border-gray-300 p-2">Country</th>
+                    <th class="border border-gray-300 p-2">State</th>
+                    <th class="border border-gray-300 p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- States will be appended here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        class StateManager {
+            constructor() {
+                this.initDB();
+                this.bindEvents();
+                this.editStateId = null; // To track which state is being edited
+            }
+
+            initDB() {
+                const request = indexedDB.open("CountryDB", 1);
+                request.onupgradeneeded = (event) => {
+                    this.db = event.target.result;
+                    this.db.createObjectStore("countries", { keyPath: "id", autoIncrement: true });
+                    this.db.createObjectStore("states", { keyPath: "id", autoIncrement: true });
+                };
+
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    this.populateCountries();
+                    this.loadStates();
+                };
+
+                request.onerror = (e) => {
+                    alert("Database error: " + e.target.error);
+                };
+            }
+
+            populateCountries() {
+                const request = this.db.transaction(["countries"], "readonly").objectStore("countries").getAll();
+                request.onsuccess = (event) => {
+                    const countrySelect = document.getElementById("countrySelect");
+                    event.target.result.forEach((i) => {
+                        const option = document.createElement("option");
+                        option.value = i.id;
+                        option.textContent = i.name;
+                        countrySelect.appendChild(option);
+                    });
+                };
+            }
+
+            bindEvents() {
+                // Optional: You can bind additional events if needed
+            }
+
+            addOrUpdateState() {
+    const countryId = document.getElementById("countrySelect").value;
+    const countryName = document.querySelector(`#countrySelect option[value='${countryId}']`).textContent; // Get the selected country name
+    const stateName = document.getElementById("stateName").value;
+
+    if (!countryId || !stateName) {
+        alert("Please select a country and enter a state name.");
+        return;
+    }
+
+
+    const state = { countryId: countryId, name: stateName, countryName: countryName }; // Include countryName
+    if (this.editStateId) {
+        // Update existing state
+        state.id = this.editStateId;
+        const request = this.db.transaction("states", "readwrite").objectStore("states").put(state);
+        request.onsuccess = () => {
+            alert("State updated successfully!");
+            this.editStateId = null; // Reset the edit state ID
+            document.getElementById("stateForm").reset(); // Reset form
+            this.loadStates(); // Refresh the table
+        };
+    } else {
+        // Add new state
+        const request = this.db.transaction("states", "readwrite").objectStore("states").add(state);
+        request.onsuccess = () => {
+            alert("State added successfully!");
+            document.getElementById("stateForm").reset(); // Reset form
+            this.loadStates(); // Refresh the table
+        };
+    }
+}
+
+
+loadStates() {
+    const statesTableBody = document.querySelector("#statesTable tbody");
+    statesTableBody.innerHTML = ''; // Clear existing rows
+
+    const request = this.db.transaction(["states"], "readonly").objectStore("states").getAll();
+    request.onsuccess = (event) => {
+        event.target.result.forEach((state) => {
+            const countryRequest = this.db.transaction(["countries"], "readonly").objectStore("countries").get(parseInt(state.countryId));
+            countryRequest.onsuccess = (countryEvent) => {
+                const country = countryEvent.target.result;
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td class="border border-gray-300 p-2">${country ? country.name : 'Unknown'}</td>
+                    <td class="border border-gray-300 p-2">${state.name}</td>
+                    <td class="border border-gray-300 p-2">
+                        <button onclick="stateManager.editState(${state.id})" class="bg-yellow-500 text-white py-1 px-2 rounded">Edit</button>
+                        <button onclick="stateManager.deleteState(${state.id})" class="bg-red-500 text-white py-1 px-2 rounded">Delete</button>
+                    </td>
+                `;
+                statesTableBody.appendChild(row);
+            };
+        });
+    };
+}
+
+
+            editState(id) {
+                const request = this.db.transaction(["states"], "readonly").objectStore("states").get(id);
+                request.onsuccess = (event) => {
+                    const state = event.target.result;
+                    document.getElementById("countrySelect").value = state.countryId;
+                    document.getElementById("stateName").value = state.name;
+                    this.editStateId = state.id; // Set the ID for updating
+                };
+            }
+
+            deleteState(id) {
+                const request = this.db.transaction("states", "readwrite").objectStore("states").delete(id);
+                request.onsuccess = () => {
+                    alert("State deleted successfully!");
+                    this.loadStates(); // Refresh the table
+                };
+                request.onerror = () => {
+                    console.error("Error deleting state: ", request.error);
+                };
+            }
+        }
+
+        // Instantiate the StateManager class
+        const stateManager = new StateManager();
+    </script>
+</body>
+</html>

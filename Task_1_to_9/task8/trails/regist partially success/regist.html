@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Registration Form with CRUD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="regist.js" defer></script>
+    <script src="display.js" defer></script>
+    <script src="country.js" defer></script>
+
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100">
+    <fieldset class="border-2 border-green-400 rounded-2xl p-7 bg-gray-800 w-full max-w-md">
+        <h2 class="text-white text-2xl text-center mb-4 font-bold">Registration</h2>
+        <form id="RegistervalidateAndStorage">
+            <label for="Username" class="block mb-2 font-bold text-green-500">User Name</label>
+            <input type="text" id="Username" placeholder="Full name" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="email" class="block mb-2 font-bold text-green-500">E-mail</label>
+            <input type="email" id="email" placeholder="example@mail.com" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="password" class="block mb-2 font-bold text-green-500">Password</label>
+            <input type="password" id="password" placeholder="Enter strong password" class="w-full p-2 mb-4 border-2 border-green-400 rounded-md text-gray-700">
+
+            <label for="date" class="block mb-2 font-bold text-green-500">Date</label>
+            <input type="date" id="date" class="w-full mb-4 p-2 border-2 border-green-400 rounded-md text-gray-700">
+
+            <!-- Updated Gender Section -->
+            <div class="mb-4">
+                <span class="font-bold text-green-500 block mb-2">Gender:</span>
+                <div class="flex space-x-4">
+                    <label for="m" class="flex items-center text-white">
+                        <input type="radio" id="m" name="Gender" value="Male" class="mr-2"> Male
+                    </label>
+                    <label for="f" class="flex items-center text-white">
+                        <input type="radio" id="f" name="Gender" value="Female" class="mr-2"> Female
+                    </label>
+                    <label for="o" class="flex items-center text-white">
+                        <input type="radio" id="o" name="Gender" value="Other" class="mr-2"> Other
+                    </label>
+                </div>
+            </div>
+            <!-- <div> <button class=" border-green-400 text-white border-2 rounded-2xl p-2 mb-2">
+                <a href="country.html"> Add Country</a>
+            </button></div> -->
+            <div class="bg-white shadow-md rounded-lg p-4 mb-4" >
+                <h2 class="text-2xl font-bold mb-4 text-center">Create Location</h2>
+                <table id="locationTable" class="table-auto w-full text-center mb-4 hidden">
+                    <thead>
+                        <tr>
+                            <th class="border px-4 py-2">Country</th>
+                            <th class="border px-4 py-2">State</th>
+                            <th class="border px-4 py-2">City</th>
+                            <th class="border px-4 py-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border px-4 py-2" id="countryCell"></td>
+                            <td class="border px-4 py-2" id="stateCell"></td>
+                            <td class="border px-4 py-2" id="cityCell"></td>
+                            <td class="border px-4 py-2">
+                                <button id="removeButton" class="text-red-500 hover:text-red-700">🗑️</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button id="actionButton" class="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold">Create</button>
+            </div>
+
+            
+
+            <button type="submit" class="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Submit</button>
+        </form>
+
+        <table id="data-table" class="min-w-full border-collapse border border-gray-300 bg-white mt-8 rounded-md shadow-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 p-2">Username</th>
+                    <th class="border border-gray-300 p-2">Email</th>
+                    <th class="border border-gray-300 p-2">Password</th>
+                    <th class="border border-gray-300 p-2">Date</th>
+                    <th class="border border-gray-300 p-2">Gender</th>
+                    <th class="border border-gray-300 p-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="list">
+                <!-- Data will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </fieldset>
+</body>
+</html>

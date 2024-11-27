@@ -1,0 +1,184 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    /* background-image: url('./z.jpeg'); */
+    background-color: #37542f58;
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: auto;
+}
+
+fieldset {
+    border: 3px solid #11ef4c7a;
+    border-radius: 20px;
+    padding: 20px;
+    width: auto;
+    /* background: url('./z.jpeg') white no-repeat; */
+    background-color: #2d3b27;
+}
+
+label {
+    display: block;
+    margin-bottom:10px;
+    font-weight: bold;
+    color: #53e82e;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 2px solid #3eef08;
+    border-radius: 5px;
+}
+
+.gender-group {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.gender-group label {
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+}
+
+input[type="radio"] {
+    margin-right: 5px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+input[type="checkbox"] {
+width: 20px;
+height: 20px;
+margin-right: 10px;
+}
+
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #f41509;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    border: none;
+}
+
+button:hover {
+    background-color: #37ea0a;
+}
+
+.device-label {
+    text-align: center;
+    color: #a490e7;
+    margin-top: 10px;
+}
+h2{
+    color: #ffffff;
+    text-shadow: 2px 2px 5px rgb(13, 248, 29);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+
+@media (max-width: 1200px) {
+    body {
+        justify-content: flex-start;
+    }
+
+    fieldset {
+        width: 50%;
+    }
+}
+
+@media (max-width: 1024px) {
+    .device-label::before {
+        content: "It's a Tablet device";
+    }
+    fieldset {
+        width: 70%;
+    }
+}
+
+@media (max-width: 768px) {
+    .device-label::before {
+        content: "It's a Small Tablet device";
+    }
+    fieldset {
+        width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    .device-label::before {
+        content: "It's a Mobile device";            
+    }
+
+    input {
+        font-size: 0.9rem;
+    }
+
+    button {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+    fieldset {
+        width: 90%;
+    }
+}
+
+@media (max-width: 300px) {
+    .device-label::before {
+        content: "Small Screen Device";
+        color: #37ea0a;
+    }
+
+    fieldset {
+        width: 95%;
+        padding: 10px;
+    }
+
+    label {
+        font-size: 0.8rem;
+    }
+
+    input {
+        font-size: 0.7rem;
+    }
+
+    button {
+        font-size: 0.7rem;
+        padding: 8px;
+    }
+}
+
+@media (max-height: 400px) {
+
+fieldset {
+    background: rgb(232, 189, 255);
+}
+
+}
+
+@media (max-height: 300px) {
+fieldset {
+    background: #c81414;
+}
+}
+
