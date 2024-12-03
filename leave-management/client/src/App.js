@@ -9,6 +9,8 @@ import PermissionRequests from './components/PermissionRequests';
 import AdminCalendar from './components/AdminCalendar';
 import LeaveAssignmentForm from './components/LeaveAssignmentForm';
 import HolidayCalendar from './components/HolidayCalendar';
+// import LeaveAssignment from './components/LeaveAssignment';
+import DownloadButton from './components/reports';
 
 function App() {  
   return (
@@ -78,13 +80,20 @@ function App() {
           >
              Holidays List
           </NavLink>  
+          <NavLink
+            to="/reports"
+            className="px-4 py-2 bg-blue-500 rounded-md hover:bg-blue-600"
+            activeClassName="bg-blue-700"
+          >
+             Reports ( leave status )
+          </NavLink>  
         </div>
 
         {/* Routes */}
         <Routes>
+        <Route path="/" element={< DownloadButton/>} />
 
-        <Route path="/" element={< HolidayCalendar/>} />
-
+        <Route path="/reports" element={< DownloadButton/>} />
         <Route path="/holidays" element={< HolidayCalendar/>} />
         <Route path="/leaveassign" element={< LeaveAssignmentForm/>} />
         <Route path="/admin-permission" element={<PermissionRequests />} />
