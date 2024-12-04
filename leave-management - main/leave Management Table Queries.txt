@@ -1,0 +1,139 @@
+-- Roles Table
+CREATE TABLE Roles (
+    id        SERIAL PRIMARY KEY,
+    role_name VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- Users Table
+CREATE TABLE Users (
+    id        SERIAL PRIMARY KEY,
+    name      VARCHAR(100) NOT NULL,
+    email     VARCHAR(150),
+    role_id   INT REFERENCES Roles(id),
+    user_id   VARCHAR(150),
+    role_name VARCHAR(50) REFERENCES Roles(role_name),
+    password  VARCHAR(255)
+);
+
+
+-- Permissions Table
+CREATE TABLE Permissions (
+    id          SERIAL PRIMARY KEY,
+    user_id     INT REFERENCES Users(id) ON DELETE CASCADE,
+    date        DATE NOT NULL,
+    duration    FLOAT NOT NULL, -- e.g., 0.5 for half-day, 1 for full-day
+    total_hours FLOAT GENERATED ALWAYS AS (
+        duration * 8 -- Assuming 8 hours in a full workday
+    ) STORED,
+    status      VARCHAR(50) DEFAULT 'Pending',
+    reason      TEXT
+);
+
+-- LeaveRequests Table
+CREATE TABLE LeaveRequests (
+    id             SERIAL PRIMARY KEY,
+    user_id        INT REFERENCES Users(id) ON DELETE CASCADE,
+    type           VARCHAR(50) NOT NULL,
+    start_date     DATE NOT NULL,
+    start_half_day VARCHAR(20) DEFAULT 'Full', -- Options: 'Full', 'First Half', 'Second Half'
+    end_date       DATE NOT NULL,
+    end_half_day   VARCHAR(20) DEFAULT 'Full', -- Options: 'Full', 'First Half', 'Second Half'
+    total_days     FLOAT GENERATED ALWAYS AS (
+        CASE
+            WHEN start_date = end_date THEN 
+                CASE 
+                    WHEN start_half_day = 'Full' AND end_half_day = 'Full' THEN 1.0
+                    WHEN start_half_day = 'First Half' AND end_half_day = 'First Half' THEN 0.5
+                    WHEN start_half_day = 'Second Half' AND end_half_day = 'Second Half' THEN 0.5
+                    ELSE 1.0 -- If mixed, assume a full day
+                END
+            ELSE
+                -- Multi-day leave calculation with half-day adjustments
+                (end_date - start_date + 1)
+                - CASE WHEN start_half_day != 'Full' THEN 0.5 ELSE 0 END
+                - CASE WHEN end_half_day != 'Full' THEN 0.5 ELSE 0 END
+        END
+    ) STORED,
+    status         VARCHAR(50) DEFAULT 'Pending',
+    reason         TEXT
+);
+
+
+CREATE TABLE LeaveBalance (
+    id            SERIAL PRIMARY KEY,
+    user_id       INT REFERENCES Users(id) ON DELETE CASCADE,
+    EL            FLOAT DEFAULT 0.0,  -- Earned Leave
+    SL            FLOAT DEFAULT 0.0,  -- Sick Leave
+    CL            FLOAT DEFAULT 0.0,  -- Casual Leave
+    CO            FLOAT DEFAULT 0.0,  -- Compensatory Off
+    SO            FLOAT DEFAULT 0.0,  -- Special Off
+    SML           FLOAT DEFAULT 0.0,  -- Special Medical Leave
+    ML            FLOAT DEFAULT 0.0,  -- Maternity Leave
+    CW            FLOAT DEFAULT 0.0,  -- Child Welfare Leave
+    OOD           FLOAT DEFAULT 0.0,  -- On Official Duty
+    HL            FLOAT DEFAULT 0.0,  -- Half-Day Leave
+    COL           FLOAT DEFAULT 0.0,  -- Compensatory Leave
+    WFH           FLOAT DEFAULT 0.0,  -- Work From Home
+    WO            FLOAT DEFAULT 0.0,  -- Weekly Off
+    MP            FLOAT DEFAULT 0.0,  -- Maternity/Paternity Leave
+    A             FLOAT DEFAULT 0.0   -- Absent
+);
+
+
+-- Step 1: Add the `user_name` column to the `LeaveRequests` table
+ALTER TABLE LeaveRequests
+ADD COLUMN user_name VARCHAR(100);
+
+-- Step 2: Update the `user_name` column with values from the `Users` table
+UPDATE LeaveRequests
+SET user_name = u.name
+FROM Users u
+WHERE LeaveRequests.user_id = u.id;
+
+---------------------------------------------------------
+insert queries
+INSERT INTO Roles (role_name)
+VALUES 
+('Admin'),
+('Manager'),
+('HR Manager'),
+('Employee');
+
+-- Insert data into Users
+INSERT INTO Users (name, email,user_id, role_id, role_name, password)
+VALUES
+('Alice', 'alice@example.com', 'AA123', 1, 'Admin', 'password123'),
+('Bob', 'bob@example.com','BB123', 2, 'Manager', 'password456'),
+('Charlie', 'charlie@example.com','CC123', 3, 'HR Manager', 'password789'),
+('Emp', 'fox@gmail.com','EE123', 4, 'Employee', 'password000'),
+('sample', 'x@x.com','SS123', 1, 'Admin', 'x');
+
+
+INSERT INTO LeaveRequests (user_id, type, start_date, start_half_day, end_date, end_half_day, status, reason)
+VALUES
+(1, 'Sick Leave', '2024-12-01', 'Full', '2024-12-01', 'Full', 'Approved', 'Fever and cold'),
+(2, 'Casual Leave', '2024-12-02', 'First Half', '2024-12-02', 'First Half', 'Pending', 'Family errand'),
+(3, 'Annual Leave', '2024-12-03', 'Full', '2024-12-04', 'Full', 'Pending', 'Vacation with family');
+
+INSERT INTO Permissions (user_id, date, duration, status, reason)
+VALUES
+(1, '2024-12-01', 1.0, 'Approved', 'System maintenance'),
+(2, '2024-12-02', 0.5, 'Pending', 'Team meeting preparation'),
+(3, '2024-12-03', 1.0, 'Rejected', 'Personal work');
+
+
+INSERT INTO LeaveBalance (user_id, EL, SL, CL, CO, SO, SML, ML, CW, OOD, HL, COL, WFH, WO, MP, A)
+VALUES
+-- Alice (Admin)
+(1, 15.0, 8.0, 6.0, 3.0, 2.0, 3.0, 0.0, 0.0, 1.0, 2.0, 1.0, 5.0, 4.0, 0.0, 0.0),
+
+-- Bob (Manager)
+(2, 12.0, 5.0, 4.0, 2.0, 1.0, 1.0, 0.0, 0.0, 0.5, 1.0, 0.5, 3.0, 4.0, 0.0, 0.0),
+
+-- Charlie (HR Manager)
+(3, 10.0, 6.0, 7.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 2.0, 0.0, 2.0, 4.0, 0.0, 0.0),
+
+-- Diana (Employee)
+(4, 8.0, 4.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 3.0, 4.0, 0.0, 0.0);
+
+
