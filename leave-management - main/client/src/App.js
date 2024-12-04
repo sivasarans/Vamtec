@@ -12,6 +12,7 @@ import AdminCalendar from './components/AdminCalendar';
 import LeaveAssignmentForm from './components/LeaveAssignmentForm';
 import HolidayCalendar from './components/HolidayCalendar';
 import DownloadButton from './components/reports';
+import Attendance from './components/Attendance';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -59,6 +60,8 @@ function App() {
               <NavLink to="/leaveassign" className="text-white text-xl">Leave Assign (Admin)</NavLink>
               <NavLink to="/holidays" className="text-white text-xl">Holidays List</NavLink>
               <NavLink to="/reports" className="text-white text-xl">Reports (Leave Status)</NavLink>
+              <NavLink to="/Attendance" className="text-white text-xl">Attendance</NavLink>
+
               <button onClick={handleLogout} className="text-white text-xl mt-4">Logout</button>
             </div>
           </div>
@@ -94,6 +97,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Login onLogin={setIsLoggedIn} />} />
             <Route path="/login" element={<Login onLogin={setIsLoggedIn} />} />
+            <Route path="/Attendance" element={isLoggedIn ? <Attendance /> : <Login onLogin={setIsLoggedIn} />} />
             <Route path="/Dashboard" element={isLoggedIn ? <Dashboard /> : <Login onLogin={setIsLoggedIn} />} />
             <Route path="/UserRegister" element={isLoggedIn ? <UserRegisterForm /> : <Login onLogin={setIsLoggedIn} />} />
             <Route path="/Permission" element={isLoggedIn ? <PermissionForm /> : <Login onLogin={setIsLoggedIn} />} />

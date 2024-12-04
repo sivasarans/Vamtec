@@ -24,7 +24,7 @@ function Login({ onLogin }) {
         // Optionally store the user details in localStorage/sessionStorage or context for persistence
         localStorage.setItem('userDetails', JSON.stringify(user));
 
-        navigate('/Dashboard'); // Redirect to the desired page
+        navigate('/Attendance'); // Redirect to the desired page
       }
     } catch (err) {
       setError(err.response?.data.error || 'Login failed.');

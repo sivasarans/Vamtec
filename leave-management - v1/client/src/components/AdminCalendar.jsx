@@ -70,8 +70,19 @@ const formattedDate = dateCopy.toISOString().split('T')[0];
     setFormData({ type: 'task', date: '', time: '', description: '', name: '', reason: '' }); // Reset form
   };
 
-  // Highlight dates on the calendar and show leave info on hover
-
+  // Highlight dates on the calendar and show leave info on hover  // inside calender leave render
+//   const tileContent = ({ date, view }) => {
+//     // console.log(view);
+//     const formattedDate = date.toISOString().split('T')[0]; // Format date to YYYY-MM-DD
+//     const data = JSON.parse(localStorage.getItem('calendarData')) || { tasks: [], leaves: [] };
+    
+//     // Show leave details when hovering over a date
+//     const leave = data.leaves.find((leave) => leave.date === formattedDate);
+//     if (view === 'month' && leave) {
+//       return <span className="text-red-500">{leave.name}</span>; // Display the name of the person on leave
+//     }
+//     return null;
+//   };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-6">

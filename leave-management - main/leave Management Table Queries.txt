@@ -14,6 +14,8 @@ CREATE TABLE Users (
     role_name VARCHAR(50) REFERENCES Roles(role_name),
     password  VARCHAR(255)
 );
+ALTER TABLE Users ADD CONSTRAINT unique_user_id UNIQUE (user_id);
+
 
 
 -- Permissions Table
@@ -89,6 +91,20 @@ UPDATE LeaveRequests
 SET user_name = u.name
 FROM Users u
 WHERE LeaveRequests.user_id = u.id;
+
+
+CREATE TABLE IF NOT EXISTS Attendance (
+    attendance_id SERIAL PRIMARY KEY,
+	user_id VARCHAR(150),
+    name VARCHAR(100),
+    date DATE NOT NULL,
+    in_time TIME DEFAULT '09:30:00',
+    out_time TIME DEFAULT '17:00:00',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+
 
 ---------------------------------------------------------
 insert queries
