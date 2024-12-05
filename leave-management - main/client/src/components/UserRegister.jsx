@@ -29,31 +29,62 @@ const UserRegister = () => {
     }));
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+    
+  //   const formDataToSubmit = new FormData();
+  //   Object.keys(formData).forEach((key) => {
+  //     formDataToSubmit.append(key, formData[key]);
+  //   });
+
+  //   try {
+  //     const response = await axios.post('http://localhost:5000/add_user', formDataToSubmit, {
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data'
+  //       }
+  //     });
+
+  //     setAlertMessage({ message: 'User registered successfully!', type: 'success' });
+  //     setTimeout(() => setAlertMessage({ message: '', type: '' }), 3000); // Hide alert after 3 seconds
+  //     console.log(response.data);
+  //   } catch (error) {
+  //     setAlertMessage({ message: 'Error registering user. Please try again.', type: 'error' });
+  //     setTimeout(() => setAlertMessage({ message: '', type: '' }), 3000);
+  //     console.error(error.response.data);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+  
+    if (!formData.profile_picture) {
+      setAlertMessage({ message: 'Please upload a profile picture.', type: 'error' });
+      return;
+    }
+  
     const formDataToSubmit = new FormData();
     Object.keys(formData).forEach((key) => {
       formDataToSubmit.append(key, formData[key]);
     });
-
+  
     try {
       const response = await axios.post('http://localhost:5000/add_user', formDataToSubmit, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       });
-
+  
       setAlertMessage({ message: 'User registered successfully!', type: 'success' });
       setTimeout(() => setAlertMessage({ message: '', type: '' }), 3000); // Hide alert after 3 seconds
       console.log(response.data);
     } catch (error) {
-      setAlertMessage({ message: 'Error registering user. Please try again.', type: 'error' });
+      setAlertMessage({ message: error.response.data.error || 'Error registering user. Please try again.', type: 'error' });
       setTimeout(() => setAlertMessage({ message: '', type: '' }), 3000);
       console.error(error.response.data);
     }
   };
-
+  
   return (
     <div className="max-w-2xl mx-auto p-8">
       {alertMessage.message && (

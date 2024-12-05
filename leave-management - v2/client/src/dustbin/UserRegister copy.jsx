@@ -69,20 +69,31 @@ function UserRegister() {
 
       {/* Role Dropdown */}
       <div className="mb-4">
-        <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+        <label htmlFor="role_name" className="block text-sm font-medium text-gray-700">Role</label>
         <select
-          id="role"
-          name="role"
-          value={formData.role}
+          id="role_name"
+          name="role_name"
+          value={formData.role_name}
           onChange={handleChange}
           className="w-full p-2 border border-gray-300 rounded-md"
         >
-          <option value="1">Admin</option>
-          <option value="2">Manager</option>
-          <option value="3">HR Manager</option>
-          <option value="4">Employee</option>
+          <option value="Admin">Admin</option>
+          <option value="Manager">Manager</option>
+          <option value="HR Manager">HR Manager</option>
+          <option value="Employee">Employee</option>
         </select>
       </div>
+
+      <label htmlFor="role_name" className="text-lg font-medium text-gray-700">Role Name</label>
+          <input
+            type="text"
+            id="role_name"
+            name="role_name"
+            value={formData.role_name}
+            onChange={handleChange}
+            required
+            className="mt-2 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
 
       {/* Submit Button */}
       <div className="mb-4">

@@ -42,38 +42,46 @@ router.post('/', upload.single('profile_picture'), async (req, res) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
-  // Check if a file was uploaded and log it
-  if (req.file) {
-    console.log("Uploaded file:", req.file);
-    const profilePicturePath = `/uploads/users_profile/${req.file.filename}`; // Save file path
-    console.log("Uploaded file path:", profilePicturePath);  // Log the file path for debugging
+  try {
+    // Check if the user ID already exists
+    const checkUserQuery = 'SELECT * FROM Users WHERE user_id = $1';
+    const result = await pool.query(checkUserQuery, [user_id]);
 
-    // Hash the password before storing it
-    bcrypt.hash(password, 10, async (err, hashedPassword) => {
-      if (err) {
-        return res.status(500).json({ error: 'Password hashing failed' });
-      }
+    if (result.rows.length > 0) {
+      return res.status(400).json({ error: 'User ID already exists' });
+    }
 
-      try {
-        // Insert user data into the database
-        const query = `
-          INSERT INTO Users (name, email, role_id, user_id, role_name, password, profile_picture)
-          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
-        `;
-        const values = [name, email, role_id, user_id, role_name, hashedPassword, profilePicturePath];
-        
-        const result = await pool.query(query, values);
-        console.log("Inserted user ID:", result.rows[0].id);  // Log the inserted user ID
+    // Check if a file was uploaded and log it
+    if (req.file) {
+      const profilePicturePath = `/uploads/users_profile/${req.file.filename}`; // Save file path
 
-        res.status(200).json({ message: 'User added successfully', userId: result.rows[0].id });
-      } catch (err) {
-        console.error("Error inserting user:", err);  // Log the error if something goes wrong
-        res.status(500).json({ error: 'Failed to insert user data' });
-      }
-    });
-  } else {
-    console.log("No file uploaded");
-    res.status(400).json({ error: 'No profile picture uploaded' });
+      // Hash the password before storing it
+      bcrypt.hash(password, 10, async (err, hashedPassword) => {
+        if (err) {
+          return res.status(500).json({ error: 'Password hashing failed' });
+        }
+
+        try {
+          // Insert user data into the database
+          const query = `
+            INSERT INTO Users (name, email, role_id, user_id, role_name, password, profile_picture)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+          `;
+          const values = [name, email, role_id, user_id, role_name, hashedPassword, profilePicturePath];
+          
+          const insertResult = await pool.query(query, values);
+          res.status(200).json({ message: 'User added successfully', userId: insertResult.rows[0].id });
+        } catch (err) {
+          console.error("Error inserting user:", err);  // Log the error if something goes wrong
+          res.status(500).json({ error: 'Failed to insert user data' });
+        }
+      });
+    } else {
+      res.status(400).json({ error: 'No profile picture uploaded' });
+    }
+  } catch (err) {
+    console.error("Database error:", err);
+    res.status(500).json({ error: 'Database query failed' });
   }
 });
 
