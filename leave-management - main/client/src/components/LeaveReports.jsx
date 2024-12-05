@@ -15,8 +15,9 @@ const LeaveReports = () => {
         responseType: 'blob', // Ensure we get the file as a blob
       });
 
-      const fileExtension = fileFormat === 'excel' ? '.xlsx' : '.csv';
-      const fileName = `LeaveRequests${fileExtension}`;
+      const fileExtension = 
+        fileFormat === 'excel' ? '.xlsx' : fileFormat === 'csv' ? '.csv' : '.pdf';
+      const fileName = `Download${fileExtension}`;
 
       // Create a link element to download the file
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -42,6 +43,7 @@ const LeaveReports = () => {
         >
           <option value="excel">Excel (.xlsx)</option>
           <option value="csv">CSV (.csv)</option>
+          <option value="pdf">PDF (.pdf)</option>
         </select>
       </div>
 

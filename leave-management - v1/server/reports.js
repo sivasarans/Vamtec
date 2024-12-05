@@ -7,15 +7,10 @@ const app = express();
 const port = 5000;
 
 // PostgreSQL connection pool
-const pool = new Pool({
-  user: 'Sivasaran',
-  host: 'localhost',
-  database: 'Sivasaran',
-  password: 'password',
-  port: 5432,
-});
+const pool = new Pool({ user: 'Sivasaran', host: 'localhost', database: 'Sivasaran', password: 'password', port: 5432 });
 
 app.use(cors());
+
 
 // Route to export LeaveRequests data to Excel or CSV based on format
 app.get('/download-leave-requests', async (req, res) => {
