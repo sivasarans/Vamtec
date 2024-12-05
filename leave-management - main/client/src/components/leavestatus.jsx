@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function LeaveRequests() {
+function LeaveStatus() {
   const leaveRequests = [
     { id: 1, user_name: 'TVK', user_id: 1, type: 'Sick Leave', start_date: '2024-12-01', end_date: '2024-12-01', status: 'Pending', reason: 'Fever and cold', reject_reason: '' },
     { id: 2, user_name: 'John Doe', user_id: 2, type: 'Casual Leave', start_date: '2024-12-02', end_date: '2024-12-02', status: 'Pending', reason: 'Family errand', reject_reason: '' },
@@ -190,4 +190,4 @@ function LeaveRequests() {
   );
 }
 
-export default LeaveRequests;
+export default LeaveStatus;

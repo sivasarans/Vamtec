@@ -15,6 +15,7 @@ CREATE TABLE Users (
     password  VARCHAR(255)
 );
 ALTER TABLE Users ADD CONSTRAINT unique_user_id UNIQUE (user_id);
+ALTER TABLE Users ADD COLUMN profile_picture BYTEA;
 
 
 

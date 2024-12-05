@@ -3,6 +3,9 @@ npm install stream-browserify os-browserify
 npm install xlsx file-saver
 npm install json2csv
 npm install bcrypt
+npm install path
+npm install multer
+
 
 
 * leave attachments need
