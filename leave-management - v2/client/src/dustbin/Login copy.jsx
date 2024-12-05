@@ -6,22 +6,25 @@ function Login({ onLogin }) {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [userDetails, setUserDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState(null); // For storing user details
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(''); // Clear previous error
 
     try {
       const response = await axios.post('http://localhost:5000/login', { user_id: userId, password });
-
+      
       if (response.status === 200) {
-        const { user } = response.data;
-        setUserDetails(user);
-        onLogin(true);
+        const { user } = response.data; // Extract user details from the response
+        setUserDetails(user); // Store the user details in the state
+        onLogin(true); // Mark user as logged in
+
+        // Optionally store the user details in localStorage/sessionStorage or context for persistence
         localStorage.setItem('userDetails', JSON.stringify(user));
-        navigate('/Attendance');
+
+        navigate('/Attendance'); // Redirect to the desired page
       }
     } catch (err) {
       setError(err.response?.data.error || 'Login failed.');
@@ -29,12 +32,9 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div 
-      className="flex flex-col items-center justify-center h-screen bg-gray-200"
-      style={{ backgroundImage: 'url(/background_login.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
-    >
-      <h1 className="text-2xl mb-4 text-white">Login</h1>
-      <form onSubmit={handleLogin} className="bg-white p-6 rounded-lg shadow-lg">
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-200">
+      <h1 className="text-2xl mb-4">Login</h1>
+      <form onSubmit={handleLogin}>
         <div className="mb-4">
           <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
           <input
