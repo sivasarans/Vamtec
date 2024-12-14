@@ -15,72 +15,84 @@ CREATE TABLE Users (
     password  VARCHAR(255)
 );
 ALTER TABLE Users ADD CONSTRAINT unique_user_id UNIQUE (user_id);
-ALTER TABLE Users ADD COLUMN profile_picture BYTEA;
+ALTER TABLE Users ADD COLUMN profile_picture VARCHAR(255);
 
 
-
--- Permissions Table
 CREATE TABLE Permissions (
     id          SERIAL PRIMARY KEY,
-    user_id     INT REFERENCES Users(id) ON DELETE CASCADE,
+    user_id     VARCHAR REFERENCES Users(user_id) ON DELETE CASCADE,
     date        DATE NOT NULL,
-    duration    FLOAT NOT NULL, -- e.g., 0.5 for half-day, 1 for full-day
+    in_time     TIME NOT NULL, -- Start time of the workday
+    out_time    TIME NOT NULL, -- End time of the workday
     total_hours FLOAT GENERATED ALWAYS AS (
-        duration * 8 -- Assuming 8 hours in a full workday
+        EXTRACT(EPOCH FROM (out_time - in_time)) / 3600 -- Calculate total hours
     ) STORED,
-    status      VARCHAR(50) DEFAULT 'Pending',
-    reason      TEXT
+    status      VARCHAR(50) DEFAULT 'Pending', -- Status of the permission (e.g., Pending, Approved)
+    reason      TEXT -- Reason for the permission
 );
 
--- LeaveRequests Table
-CREATE TABLE LeaveRequests (
-    id             SERIAL PRIMARY KEY,
-    user_id        INT REFERENCES Users(id) ON DELETE CASCADE,
-    type           VARCHAR(50) NOT NULL,
-    start_date     DATE NOT NULL,
-    start_half_day VARCHAR(20) DEFAULT 'Full', -- Options: 'Full', 'First Half', 'Second Half'
-    end_date       DATE NOT NULL,
-    end_half_day   VARCHAR(20) DEFAULT 'Full', -- Options: 'Full', 'First Half', 'Second Half'
-    total_days     FLOAT GENERATED ALWAYS AS (
-        CASE
-            WHEN start_date = end_date THEN 
-                CASE 
-                    WHEN start_half_day = 'Full' AND end_half_day = 'Full' THEN 1.0
-                    WHEN start_half_day = 'First Half' AND end_half_day = 'First Half' THEN 0.5
-                    WHEN start_half_day = 'Second Half' AND end_half_day = 'Second Half' THEN 0.5
-                    ELSE 1.0 -- If mixed, assume a full day
-                END
-            ELSE
-                -- Multi-day leave calculation with half-day adjustments
-                (end_date - start_date + 1)
-                - CASE WHEN start_half_day != 'Full' THEN 0.5 ELSE 0 END
-                - CASE WHEN end_half_day != 'Full' THEN 0.5 ELSE 0 END
-        END
-    ) STORED,
-    status         VARCHAR(50) DEFAULT 'Pending',
-    reason         TEXT
+ALTER TABLE Permissions
+ADD CONSTRAINT check_time_validity CHECK (out_time > in_time);
+
+--LEAVE STATUS
+CREATE TABLE leave_applications ( 
+  id SERIAL PRIMARY KEY,  -- Automatically increments for each new entry
+  user_id VARCHAR NOT NULL,  -- Foreign key referencing user ID
+  user_name VARCHAR(255) NOT NULL,  -- User's name (from users table)
+  leave_type VARCHAR(50) NOT NULL,  -- Type of leave (e.g., 'EL', 'SL')
+  from_date DATE NOT NULL,  -- Start date of the leave
+  to_date DATE NOT NULL,  -- End date of the leave
+  leave_days INT NOT NULL,  -- Total days for the leave
+  reason TEXT,  -- Reason for the leave
+  status VARCHAR(20) DEFAULT 'Pending',  -- Status of the leave request (default is 'Pending')
+  applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Date and time when the application was submitted
+  FOREIGN KEY (user_id) REFERENCES users(user_id)  -- Assuming you have a users table to reference user IDs
 );
+ALTER TABLE leave_applications
+ADD COLUMN reject_reason TEXT;
 
 
-CREATE TABLE LeaveBalance (
-    id            SERIAL PRIMARY KEY,
-    user_id       INT REFERENCES Users(id) ON DELETE CASCADE,
-    EL            FLOAT DEFAULT 0.0,  -- Earned Leave
-    SL            FLOAT DEFAULT 0.0,  -- Sick Leave
-    CL            FLOAT DEFAULT 0.0,  -- Casual Leave
-    CO            FLOAT DEFAULT 0.0,  -- Compensatory Off
-    SO            FLOAT DEFAULT 0.0,  -- Special Off
-    SML           FLOAT DEFAULT 0.0,  -- Special Medical Leave
-    ML            FLOAT DEFAULT 0.0,  -- Maternity Leave
-    CW            FLOAT DEFAULT 0.0,  -- Child Welfare Leave
-    OOD           FLOAT DEFAULT 0.0,  -- On Official Duty
-    HL            FLOAT DEFAULT 0.0,  -- Half-Day Leave
-    COL           FLOAT DEFAULT 0.0,  -- Compensatory Leave
-    WFH           FLOAT DEFAULT 0.0,  -- Work From Home
-    WO            FLOAT DEFAULT 0.0,  -- Weekly Off
-    MP            FLOAT DEFAULT 0.0,  -- Maternity/Paternity Leave
-    A             FLOAT DEFAULT 0.0   -- Absent
+
+
+CREATE TABLE leave_data (
+    user_id    VARCHAR(150) PRIMARY KEY,  -- user_id references Users(user_id), ensuring each user_id is unique
+    name       VARCHAR(100),  -- Store name directly, as it is not needed as a foreign key
+    EL         FLOAT DEFAULT 25,  -- Default value for EL
+    SL         FLOAT DEFAULT 5,   -- Default value for SL
+    CL         FLOAT DEFAULT 10,  -- Default value for CL
+    CO         FLOAT DEFAULT 0,   -- Default value for CO
+    SO         FLOAT DEFAULT 0,   -- Default value for SO
+    SML        FLOAT DEFAULT 0,   -- Default value for SML
+    ML         FLOAT DEFAULT 0,   -- Default value for ML
+    CW         FLOAT DEFAULT 0,   -- Default value for CW
+    OOD        FLOAT DEFAULT 0,   -- Default value for OOD
+    HL         FLOAT DEFAULT 0,   -- Default value for HL
+    COL        FLOAT DEFAULT 0,   -- Default value for COL
+    WFH        FLOAT DEFAULT 0,   -- Default value for WFH
+    WO         FLOAT DEFAULT 0,   -- Default value for WO
+    MP         FLOAT DEFAULT 0,   -- Default value for MP
+    A          FLOAT DEFAULT 0,   -- Default value for A
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE  -- user_id as foreign key with delete cascade
 );
+CREATE OR REPLACE FUNCTION insert_leave_data_after_user_creation()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Insert a new row into the leave_data table with default values
+  INSERT INTO leave_data (user_id, name)
+  VALUES (NEW.user_id, NEW.name);
+  
+  -- Return the new user data (as required by triggers)
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER after_user_insert
+AFTER INSERT ON Users
+FOR EACH ROW
+EXECUTE FUNCTION insert_leave_data_after_user_creation();
+
+
 
 
 -- Step 1: Add the `user_name` column to the `LeaveRequests` table
@@ -105,7 +117,52 @@ CREATE TABLE IF NOT EXISTS Attendance (
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
+ALTER TABLE Attendance 
+ADD COLUMN department VARCHAR(100);
+ALTER TABLE Attendance 
+ADD COLUMN status VARCHAR(10) GENERATED ALWAYS AS (
+    CASE 
+        WHEN EXTRACT(EPOCH FROM (out_time - in_time)) / 3600 >= 8 THEN 'Present'
+        ELSE 'Absent'
+    END
+) STORED;
 
+
+CREATE TABLE holidays (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE Attendance
+ADD CONSTRAINT unique_user_date UNIQUE (user_id, date);
+
+
+============================================
+-- Add profile_picture column to leave_applications table
+ALTER TABLE leave_applications
+ADD COLUMN profile_picture VARCHAR(255);
+
+-- Create or replace a trigger function to update profile_picture in leave_applications
+CREATE OR REPLACE FUNCTION update_profile_picture()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Set the profile_picture in leave_applications based on user_id
+  NEW.profile_picture := (
+    SELECT profile_picture
+    FROM users
+    WHERE users.user_id = NEW.user_id
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger that fires before INSERT or UPDATE on leave_applications
+CREATE TRIGGER sync_profile_picture
+BEFORE INSERT OR UPDATE ON leave_applications
+FOR EACH ROW
+EXECUTE FUNCTION update_profile_picture();
+============================================================
 
 ---------------------------------------------------------
 insert queries
@@ -132,12 +189,8 @@ VALUES
 (2, 'Casual Leave', '2024-12-02', 'First Half', '2024-12-02', 'First Half', 'Pending', 'Family errand'),
 (3, 'Annual Leave', '2024-12-03', 'Full', '2024-12-04', 'Full', 'Pending', 'Vacation with family');
 
-INSERT INTO Permissions (user_id, date, duration, status, reason)
-VALUES
-(1, '2024-12-01', 1.0, 'Approved', 'System maintenance'),
-(2, '2024-12-02', 0.5, 'Pending', 'Team meeting preparation'),
-(3, '2024-12-03', 1.0, 'Rejected', 'Personal work');
-
+INSERT INTO Permissions (user_id, date, in_time, out_time, reason) 
+VALUES (1, '2024-12-10', '09:00', '17:00', 'Medical Appointment'); 
 
 INSERT INTO LeaveBalance (user_id, EL, SL, CL, CO, SO, SML, ML, CW, OOD, HL, COL, WFH, WO, MP, A)
 VALUES

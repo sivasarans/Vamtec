@@ -8,8 +8,18 @@ npm install multer
 
 
 
-* leave attachments need
+Done:
+leave form,
+leave assign,
+leave status, 
+permission,
+permission status,
+user register,
+calender,
+leave Reports
 
 
-COPY LeaveRequests TO 'C:\\Users\\Sivasaran\\Desktop\\Vamtec\\leave-management\\download.csv' WITH CSV HEADER;
-COPY LeaveRequests TO 'C:\\Users\\Sivasaran\\Desktop\\Vamtec\\leave-management\\download.txt' WITH DELIMITER ',' CSV HEADER;
+
+
+undone:
+holiday list(backend tested), attandance.

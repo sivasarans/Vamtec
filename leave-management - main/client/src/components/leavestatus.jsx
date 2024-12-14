@@ -1,27 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { DataGrid } from '@mui/x-data-grid';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
+import { TextField, Box, IconButton, Button } from '@mui/material';
+import { NavLink } from 'react-router-dom';
 
 function LeaveStatus() {
-  const leaveRequests = [
-    { id: 1, user_name: 'TVK', user_id: 1, type: 'Sick Leave', start_date: '2024-12-01', end_date: '2024-12-01', status: 'Pending', reason: 'Fever and cold', reject_reason: '' },
-    { id: 2, user_name: 'John Doe', user_id: 2, type: 'Casual Leave', start_date: '2024-12-02', end_date: '2024-12-02', status: 'Pending', reason: 'Family errand', reject_reason: '' },
-    { id: 3, user_name: 'Jane Smith', user_id: 3, type: 'Annual Leave', start_date: '2024-12-03', end_date: '2024-12-04', status: 'Approved', reason: 'Vacation with family', reject_reason: '' },
-    { id: 4, user_name: 'Mark Lee', user_id: 4, type: 'Sick Leave', start_date: '2024-12-05', end_date: '2024-12-05', status: 'Rejected', reason: 'No medical certificate', reject_reason: 'No proper documents' },
-  ];
-
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
-  const [isAdminMode, setIsAdminMode] = useState(false); // Default to Employee Mode
   const [searchQuery, setSearchQuery] = useState('');
-  const [rejectReason, setRejectReason] = useState(''); // Reason for rejection
-  const [currentRequestId, setCurrentRequestId] = useState(null); // ID of the request being rejected
+  const [userData, setUserData] = useState(null);
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
 
-  const deleteLeave = (requestId) => {
-    console.log(`Leave request ${requestId} deleted!`);
+
+
+  // Fetch user data from localStorage
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('userDetails');
+    if (storedUserData) {
+      const userDetails = JSON.parse(storedUserData);
+      setUserData(userDetails);
+      setIsAdminMode(userDetails.role === "Admin");
+    }
+  }, []);
+
+  // Fetch leave requests from the database
+  useEffect(() => {
+    const fetchLeaveRequests = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/leavebalance/get/leave-applications');
+        setLeaveRequests(response.data);
+      } catch (error) {
+        console.error('Error fetching leave requests:', error);
+      }
+    };
+    fetchLeaveRequests();
+  }, []);
+
+  const updateLeaveStatus = async (requestId, newStatus, rejectReason = '') => {
+    try {
+      await axios.put(`http://localhost:5000/leavebalance/put/leave-applications/${requestId}`, {
+        status: newStatus,
+        reject_reason: rejectReason,
+      });
+      setLeaveRequests((prevRequests) =>
+        prevRequests.map((request) =>
+          request.id === requestId ? { ...request, status: newStatus, reject_reason: rejectReason } : request
+        )
+      );
+    } catch (error) {
+      console.error('Error updating leave status:', error);
+    }
   };
-
-  const updateLeaveStatus = (requestId, newStatus, reason = '') => {
-    console.log(`Leave request ${requestId} status updated to ${newStatus} with reason: ${reason}`);
-    setRejectReason('');
-    setCurrentRequestId(null);
+//danger zone ( delete server )
+  const deleteLeave = async (requestId) => {
+    try {
+      await axios.delete(`http://localhost:5000/leavebalance/delete-leaverequest/${requestId}`);
+      setLeaveRequests((prevRequests) => prevRequests.filter((request) => request.id !== requestId));
+    } catch (error) {
+      console.error('Error deleting leave request:', error);
+    }
   };
 
   const handleReject = (requestId) => {
@@ -38,155 +80,268 @@ function LeaveStatus() {
     return leaveRequests.filter((request) => request.status === status);
   };
 
-  const filteredRequests = leaveRequests.filter((request) =>
-    request.user_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
+  const handleSelectRows = (selected) => {
+    console.log("Selected Rows:", selected); // Debugging to check the selected rows
+    setSelectedRows(selected);
+  }
+
+  const approveAllSelected = () => {
+    selectedRows.forEach((id) => {
+      updateLeaveStatus(id, 'Approved');
+      console.log("Approved", id );
+    });
+  };
+  // console.log("Selected Rows:", selectedRows)
+
+
+
+  const columns = [
+
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      flex: 1,
+      width: 150, // Increase the width
+
+      renderCell: (params) => (
+
+        <>
+          {isAdminMode && params.row.status === 'Pending' ? (
+            <>
+                <IconButton
+                onClick={() => updateLeaveStatus(params.row.id, 'Approved')}
+                color="primary"
+                aria-label="approve"
+
+              >
+                <CheckIcon /> {/* Approval Icon */}
+              </IconButton>
+              <IconButton
+                onClick={() => handleReject(params.row.id)}
+                color="secondary"
+                aria-label="reject"
+
+              >
+                <CloseIcon /> {/* Rejection Icon */}
+              </IconButton>
+            </>
+                
+          ) : (
+            !isAdminMode && params.row.status === 'Pending' && (
+              <IconButton
+                onClick={() => deleteLeave(params.row.id)}
+                color="default"
+              >
+                <DeleteIcon /> {/* Delete Icon */}
+              </IconButton>
+            )     
+
+          )     } 
+                
+        </>
+      ),
+    },
+    { field: 'user_name', headerName: 'User Name', flex: 1 },
+    { field: 'user_id', headerName: 'User ID', flex: 1 },
+    { field: 'leave_type', headerName: 'Leave Type', flex: 1 },
+    { field: 'from_date', headerName: 'Start Date', flex: 1 ,
+      renderCell: (params) => {
+        const date = params.row?.from_date;
+        return (
+          <span>
+            {date
+              ? new Date(date).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                }).replace(' ', '-')
+              : 'N/A'}
+          </span>
+        );
+      },
+    },
+    { field: 'to_date', headerName: 'End Date', flex: 1 ,
+      renderCell: (params) => {
+        const date = params.row?.to_date;
+        return (
+          <span className="px-4 py-2">
+  {date 
+    ? new Date(date).toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+      }).replace(' ', ' - ') 
+    : 'N/A'}
+</span>
+
+        );
+      },
+    },
+    { field: 'status', headerName: 'Status', flex: 1 ,renderCell: (params) => {
+      const statusClass =
+        params.row.status === 'Pending'
+          ? 'bg-yellow-300'
+          : params.row.status === 'Approved'
+          ? 'bg-green-300'
+          : params.row.status === 'Rejected'
+          ? 'bg-red-300'
+          : 'bg-gray-200'; // Default to gray if status is unknown
+
+      return (
+<span className={`inline-block px-2 py-0.15 rounded-md ${statusClass}`}>
+{params.row.status}
+        </span>
+      );
+    },
+  },
+    { field: 'reason', headerName: 'Reason', flex: 1 },
+    { field: 'reject_reason', headerName: 'Reject Reason', flex: 1 },
+    {
+      field: 'profile_picture',
+      headerName: 'Profile',
+      width: 100,
+      renderCell: (params) => (
+        <img
+          src={`http://localhost:5000${params.row.profile_picture}`}
+          alt="Profile"
+          className="w-12 h-12 rounded-full object-cover"
+        />
+      ),
+    },
+
+
+  ];
+
+  const userRequests = userData && userData.role === "Employee" ? leaveRequests.filter(request => request.user_id === userData.user_id) : leaveRequests;
+
+  const filteredRequests = userData?.role === 'Employee' 
+  ? userRequests.filter((request) =>
+      request.user_name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  : leaveRequests.filter((request) =>
+      request.user_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+  
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      {/* Mode Selector */}
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700 mb-2">Select Mode</label>
-        <select
-          value={isAdminMode ? 'Admin' : 'Employee'}
-          onChange={(e) => setIsAdminMode(e.target.value === 'Admin')}
-          className="p-2 border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="Admin">Admin Mode</option>
-          <option value="Employee">Employee Mode</option>
-        </select>
-      </div>
+<div className="max-w-4xl mx-auto p-4">
+<NavLink
+  to="/leaveform"
+  className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800"
+>
+  <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0">
+    Apply Leave
+  </span>
+</NavLink>
 
-      {/* Search Bar */}
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700 mb-2">Search Employee</label>
-        <input
-          type="text"
+
+  {/* User Info */}
+  {userData ? (
+    <div className="text-sm text-gray-700 mb-4">
+      <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User: "{userData.name}"</p>
+      <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User ID: {userData.user_id}</p>
+      <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">Role: {userData.role}</p>
+    </div>
+  ) : (
+    <p>Loading user data...</p>
+  )}
+
+  {/* Tab Buttons and Search Box in Same Line */}
+  <div className="mb-4 flex justify-between items-center space-x-4">
+    <div className="flex space-x-4">
+      {['All', 'Approved', 'Pending', 'Rejected'].map((status) => (
+        <button
+          key={status}
+          className={`px-4 py-0.5 rounded-md ${activeTab === status ? `bg-${status === 'Approved' ? 'green' : status === 'Pending' ? 'yellow' : 'red'}-500 text-white` : 'bg-gray-200'}`}
+          onClick={() => setActiveTab(status)}
+        >
+          {status}
+        </button>
+      ))}
+    </div>
+
+    {/* Search Box for Admin */}
+    {userData && userData.role === "Admin" && (
+      <Box sx={{ width: '300px' }}>
+        <TextField
+          label="Search by User name"
+          variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="p-2 border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Search employee by name"
+          fullWidth
         />
-      </div>
-
-      {/* Tab Buttons */}
-      <div className="mb-4 flex space-x-4">
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'All' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('All')}
+      </Box>
+    )}
+  </div>
+  {/* Approve All Selected Button */}
+  {userData && userData.role === "Admin" && selectedRows.length > 0 && (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={approveAllSelected}
+          style={{ marginBottom: '20px' }}
         >
-          All
-        </button>
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'Approved' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Approved')}
-        >
-          Approved
-        </button>
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'Pending' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Pending')}
-        >
-          Pending
-        </button>
-        <button
-          className={`px-4 py-2 rounded-md ${activeTab === 'Rejected' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Rejected')}
-        >
-          Rejected
-        </button>
-      </div>
+          Approve All Selected
+        </Button>)}
+      
 
-      {/* Leave Requests Table */}
-      <div className="overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="min-w-full table-auto text-left">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">User Name</th>
-              <th className="px-4 py-2">Leave Type</th>
-              <th className="px-4 py-2">Start Date</th>
-              <th className="px-4 py-2">End Date</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Reason</th>
-              <th className="px-4 py-2">Reject Reason</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRequests.filter((request) => filterRequests(activeTab).includes(request)).map((request) => (
-              <tr key={request.id}>
-                <td className="px-4 py-2">{request.user_name}</td>
-                <td className="px-4 py-2">{request.type}</td>
-                <td className="px-4 py-2">{request.start_date}</td>
-                <td className="px-4 py-2">{request.end_date}</td>
-                <td
-                  className={`px-4 py-2 ${
-                    request.status === 'Approved'
-                      ? 'bg-green-100'
-                      : request.status === 'Pending'
-                      ? 'bg-yellow-100'
-                      : 'bg-red-100'
-                  }`}
-                >
-                  {request.status}
-                </td>
-                <td className="px-4 py-2">{request.reason}</td>
-                <td className="px-4 py-2">{request.reject_reason}</td>
-                <td className="px-4 py-2">
-                  {isAdminMode && request.status === 'Pending' ? (
-                    <>
-                      <button
-                        onClick={() => updateLeaveStatus(request.id, 'Approved')}
-                        className="px-4 py-2 bg-green-500 text-white rounded-md mr-2"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        // onClick={() => setCurrentRequestId(request.id)}
-                        onClick={() => handleReject(request.id)}
+  {/* Leave Requests Table */}
+  <div 
+        style={{
+          height: 400,
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowX: 'auto', // Enable horizontal scrolling
+          overflowY: 'auto', // Allow vertical scrolling if needed
+        }}
+  >
+    <DataGrid
+      rows={filteredRequests.filter((request) => filterRequests(activeTab).includes(request))}
+      columns={columns}
+      pageSize={5}
+      rowsPerPageOptions={[5, 10, 20]}
+      // checkboxSelection={false}
+      // disableSelectionOnClick
+      autoHeight={false}
+      density="compact"
+      checkboxSelection
+      onSelectionModelChange={(newSelection) => {
+        console.log("Selection model changed:", newSelection);
+        handleSelectRows(newSelection);
 
-                        className="px-4 py-2 bg-red-500 text-white rounded-md"
-                      >
-                        Reject
-                      </button>
-                    </>
-                  ) : (
-                    !isAdminMode && request.status === 'Pending' && (
-                      <button
-                        onClick={() => deleteLeave(request.id)}
+      }}
+      // onSelectionModelChange={console.log("Selection model changed:")
+      // }
+      
+      style={{
+        minWidth: 1000, // Sets a minimum width to allow horizontal scrolling
+      }}
+      sx={{
+        '& .MuiDataGrid-columnHeaders': {
+          position: 'sticky',
+          top: 0,
+          backgroundColor: 'rgba(185, 230, 80, 1)', // Header background color
+        },
+        '& .MuiDataGrid-columnHeadersInner': {
+          backgroundColor: 'rgba(247, 247, 247, 1)', // Footer background color
+        },
+        '& .MuiDataGrid-footerContainer': {
+          position: 'sticky',
+          bottom: 0,
+          backgroundColor: 'rgba(122, 143, 140, 0.18)', // Footer background color
+          zIndex: 2,
+        },
+        '& .MuiDataGrid-row:nth-of-type(even)': {
+          backgroundColor: 'rgba(208, 220, 223, 0.37)', // Light grey for even rows
+        },
+        '& .MuiDataGrid-row:hover': {
+          backgroundColor: 'rgb(112, 235, 136)', // Highlight rows on hover
+        },
+      }}
+    />
+  </div>
+</div>
 
-                        className="px-4 py-2 bg-gray-500 text-white rounded-md"
-                      >
-                        Delete
-                      </button>
-                    )
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Reject Reason Input */}
-      {/* {currentRequestId && (
-        <div className="mt-4">
-          <label className="text-sm font-medium text-gray-700 mb-2">Reason for Rejection</label>
-          <textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            className="p-2 border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter rejection reason here..."
-          ></textarea>
-          <button
-            onClick={() => updateLeaveStatus(currentRequestId, 'Rejected', rejectReason)}
-            className="px-4 py-2 bg-red-500 text-white rounded-md mt-2"
-          >
-            Submit
-          </button>
-        </div>
-      )} */}
-    </div>
   );
 }
 

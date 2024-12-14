@@ -1,35 +1,45 @@
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser } from '../redux/userSlice';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-function Login({ onLogin }) {
+
+
+const Login = ({ onLogin }) => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [userDetails, setUserDetails] = useState(null);
+  const dispatch = useDispatch();
+  
   const navigate = useNavigate();
+  const loggedUser = useSelector((state) => state.user.logged_user);
+
+  console.log('Logged User:', loggedUser);
+  
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-
     try {
       const response = await axios.post('http://localhost:5000/login', { user_id: userId, password });
+      const userData = response.data.user;
+      dispatch(setUser(userData)); // Save user data in Redux
+      onLogin(true);
+      localStorage.setItem('isLoggedIn', 'true');
 
-      if (response.status === 200) {
-        const { user } = response.data;
-        setUserDetails(user);
-        onLogin(true);
-        localStorage.setItem('userDetails', JSON.stringify(user));
-        navigate('/Attendance');
-      }
+      localStorage.setItem('userDetails', JSON.stringify(userData));
+      navigate('/Dashboard');
+
+
     } catch (err) {
-      setError(err.response?.data.error || 'Login failed.');
+      console.log('Error:', err.response);
+
+      setError(err.response?.data?.error || 'Login failed. Please try again...');
     }
   };
 
   return (
-    <div 
+    <div
       className="flex flex-col items-center justify-center h-screen bg-gray-200"
       style={{ backgroundImage: 'url(/background_login.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
@@ -66,6 +76,6 @@ function Login({ onLogin }) {
       </form>
     </div>
   );
-}
+};
 
 export default Login;

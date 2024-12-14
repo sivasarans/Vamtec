@@ -1,87 +1,144 @@
-// routes/adduser.js
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const bcrypt = require('bcrypt');
-const pool = require('../config/db');  // Importing database connection pool
+// // routes/adduser.js
+// const express = require('express');
+// const pool = require('../config/db');
+// const { img } = require('vamtec');
 
+// const router = express.Router();
+
+// router.post(
+//   '/',
+//   img(["uploads/users_profile", "timestamp", "profile_picture"]),
+//   async (req, res) => {
+//     const { name, email, role_id, user_id, role_name, password } = req.body;
+//     if (!name || !email || !role_id || !user_id || !role_name || !password || !req.file)
+//       return res.status(400).json({ error: 'All fields and profile picture are required' });
+
+//     try {
+//       const userExists = await pool.query('SELECT 1 FROM Users WHERE user_id = $1', [user_id]);
+//       if (userExists.rows.length > 0)
+//         return res.status(400).json({ error: 'User ID already exists' });
+
+//       const query = `
+//         INSERT INTO Users (name, email, role_id, user_id, role_name, password, profile_picture)
+//         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
+//       const values = [name, email, role_id, user_id, role_name, password, `/uploads/users_profile/${req.file.filename}`];
+//       const result = await pool.query(query, values);
+
+//       res.status(200).json({ message: 'User added successfully', userId: result.rows[0].id });
+//     } catch (err) {
+//       res.status(500).json({ error: 'Failed to process request' });
+//     }
+//   }
+// );
+// router.get('/',async ( req, res ) => {
+//   try {
+//     const query = 'SELECT * FROM Users';
+//     const result = await pool.query(query);
+//     res.status(200).json({message: "Success", result: result.rows});}
+//     catch {
+//       res.status(400).json({ message: "Failed to fetch users" });
+//     }
+// })
+
+// module.exports = router;
+
+const express = require('express');
+const pool = require('../config/db');
+const { img } = require('vamtec');
 const router = express.Router();
 
-// Setup multer for file upload (profile picture) to 'uploads/users_profile' folder
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../uploads', 'users_profile');
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });  // Create the folder if it doesn't exist
+// Add User - POST route
+router.post(
+  '/',
+  img(["uploads/users_profile", "timestamp", "profile_picture"]),
+  async (req, res) => {
+    const { name, email, role_id, user_id, role_name, password } = req.body;
+    if (!name || !email || !role_id || !user_id || !role_name || !password || !req.file)
+      return res.status(400).json({ error: 'All fields and profile picture are required' });
+
+    try {
+      const userExists = await pool.query('SELECT 1 FROM Users WHERE user_id = $1', [user_id]);
+      if (userExists.rows.length > 0)
+        return res.status(400).json({ error: 'User ID already exists' });
+
+      const query = `
+        INSERT INTO Users (name, email, role_id, user_id, role_name, password, profile_picture)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
+      const values = [name, email, role_id, user_id, role_name, password, `/uploads/users_profile/${req.file.filename}`];
+      const result = await pool.query(query, values);
+
+      res.status(200).json({ message: 'User added successfully', userId: result.rows[0].id });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to process request' });
     }
-    cb(null, uploadPath);  // Save files to this folder
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));  // Set file name as timestamp with extension
+  }
+);
+
+// Get All Users - GET route
+router.get('/', async (req, res) => {
+  try {
+    const query = 'SELECT * FROM Users';
+    const result = await pool.query(query);
+    res.status(200).json({ message: "Success", result: result.rows });
+  } catch {
+    res.status(400).json({ message: "Failed to fetch users" });
   }
 });
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },  // 5MB file size limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'), false);
+// Update User - PUT route
+router.put(
+  '/:user_id',
+  img(["uploads/users_profile", "timestamp", "profile_picture"]), // Optional: Only if updating profile picture
+  async (req, res) => {
+    const { name, email, role_id, role_name, password } = req.body;
+    const { user_id } = req.params;
+    const profile_picture = req.file ? `/uploads/users_profile/${req.file.filename}` : null;
+
+    if (!name || !email || !role_id || !role_name || !password)
+      return res.status(400).json({ error: 'All fields are required' });
+
+    try {
+      const userExists = await pool.query('SELECT 1 FROM Users WHERE user_id = $1', [user_id]);
+      if (userExists.rows.length === 0)
+        return res.status(404).json({ error: 'User not found' });
+
+      // Update user
+      const query = `
+        UPDATE Users
+        SET name = $1, email = $2, role_id = $3, role_name = $4, password = $5,
+            profile_picture = COALESCE($6, profile_picture) 
+        WHERE user_id = $7 RETURNING id`;
+      const values = [name, email, role_id, role_name, password, profile_picture, user_id];
+      const result = await pool.query(query, values);
+
+      if (result.rowCount === 0)
+        return res.status(400).json({ error: 'Failed to update user' });
+
+      res.status(200).json({ message: 'User updated successfully', userId: result.rows[0].id });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to process request' });
     }
   }
-});
+);
 
-// API to add a user, including profile picture
-router.post('/', upload.single('profile_picture'), async (req, res) => {
-  const { name, email, role_id, user_id, role_name, password } = req.body;
-
-  if (!name || !email || !role_id || !user_id || !role_name || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
+// Delete User - DELETE route
+router.delete('/:user_id', async (req, res) => {
+  const { user_id } = req.params;
 
   try {
-    // Check if the user ID already exists
-    const checkUserQuery = 'SELECT * FROM Users WHERE user_id = $1';
-    const result = await pool.query(checkUserQuery, [user_id]);
+    const userExists = await pool.query('SELECT 1 FROM Users WHERE user_id = $1', [user_id]);
+    if (userExists.rows.length === 0)
+      return res.status(404).json({ error: 'User not found' });
 
-    if (result.rows.length > 0) {
-      return res.status(400).json({ error: 'User ID already exists' });
-    }
+    const query = 'DELETE FROM Users WHERE user_id = $1 RETURNING id';
+    const result = await pool.query(query, [user_id]);
 
-    // Check if a file was uploaded and log it
-    if (req.file) {
-      const profilePicturePath = `/uploads/users_profile/${req.file.filename}`; // Save file path
+    if (result.rowCount === 0)
+      return res.status(400).json({ error: 'Failed to delete user' });
 
-      // Hash the password before storing it
-      bcrypt.hash(password, 10, async (err, hashedPassword) => {
-        if (err) {
-          return res.status(500).json({ error: 'Password hashing failed' });
-        }
-
-        try {
-          // Insert user data into the database
-          const query = `
-            INSERT INTO Users (name, email, role_id, user_id, role_name, password, profile_picture)
-            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
-          `;
-          const values = [name, email, role_id, user_id, role_name, hashedPassword, profilePicturePath];
-          
-          const insertResult = await pool.query(query, values);
-          res.status(200).json({ message: 'User added successfully', userId: insertResult.rows[0].id });
-        } catch (err) {
-          console.error("Error inserting user:", err);  // Log the error if something goes wrong
-          res.status(500).json({ error: 'Failed to insert user data' });
-        }
-      });
-    } else {
-      res.status(400).json({ error: 'No profile picture uploaded' });
-    }
+    res.status(200).json({ message: 'User deleted successfully', userId: result.rows[0].id });
   } catch (err) {
-    console.error("Database error:", err);
-    res.status(500).json({ error: 'Database query failed' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Paths to the folders you want to create
-const profileFolderPath = path.join(__dirname, 'uploads', 'users_profile');
+const profileFolderPath = path.join(__dirname, 'uploads', 'users_profile'); // console.log = output:C:\Users\Sivasaran\Desktop\Vamtec\leave-management - main\server\uploads\users_profile
 const leaveAttachmentsFolderPath = path.join(__dirname, 'uploads', 'users_leave_attachments');
 console.log(profileFolderPath);
 // Function to create the folders if they don't exist

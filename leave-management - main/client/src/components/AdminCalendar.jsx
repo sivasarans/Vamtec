@@ -1,218 +1,125 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import axios from 'axios';
+import { Grid } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 
 function AdminCalendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [tasks, setTasks] = useState([]);
-  const [leaves, setLeaves] = useState([]);
-  const [formData, setFormData] = useState({
-    type: 'task',
-    date: '',
-    time: '',
-    description: '',
-    name: '',
-    reason: '',
-  });
+  const [allLeaves, setAllLeaves] = useState([]); // Store all leaves
+  const [filteredLeaves, setFilteredLeaves] = useState([]); // Filtered leaves for the selected date
+  const [userData, setUserData] = useState(null);
 
-  // Load data from localStorage on mount
+  // Load leave applications from backend (fetched once)
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('calendarData')) || {
-      tasks: [
-        { date: '2024-12-02', time: '10:00', description: 'Meeting with Team' },
-        { date: '2024-12-03', time: '14:00', description: 'Code Review' },
-      ],
-      leaves: [
-        { date: '2024-12-05', name: 'Alice', reason: 'Sick Leave' },
-        { date: '2024-12-09', name: 'Bob', reason: 'Family Function' },
-        { date: '2024-12-09', name: 'Karan', reason: 'Family Function' },
-      ],
+    const fetchData = async () => {
+      try {
+        const leavesResponse = await axios.get('http://localhost:5000/leavebalance/get/leave-applications');
+        setAllLeaves(leavesResponse.data); // Set all leaves in state
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
     };
 
-    localStorage.setItem('calendarData', JSON.stringify(data)); // Ensure data is stored
+    fetchData();
   }, []);
 
-  // Update tasks and leaves for the selected date
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('calendarData')) || { tasks: [], leaves: [] };
-    // const formattedDate = selectedDate.toISOString().split('T')[0]; // Get the date in YYYY-MM-DD format // issue in date for next day applied
-    const dateCopy = new Date(selectedDate);
-dateCopy.setDate(dateCopy.getDate() +1 );  // Subtract one day
-const formattedDate = dateCopy.toISOString().split('T')[0];
+    const fetchUserData = async () => {
+      const storedUserData = JSON.parse(localStorage.getItem('userDetails'));
+      if (storedUserData) setUserData(storedUserData);
+    };
+    fetchUserData();
+  }, []);
 
+  // Filter leaves based on the selected date (between from_date and to_date)
+  useEffect(() => {
+    const formattedDate = selectedDate.toISOString().split('T')[0]; // Format selected date to YYYY-MM-DD
 
-    // Filter tasks and leaves for the selected date
-    setTasks(data.tasks.filter((task) => task.date === formattedDate));
-    setLeaves(data.leaves.filter((leave) => leave.date === formattedDate));
-  }, [selectedDate]);
+    // Filter leaves for the selected date, taking into account the range
+    const filteredLeaves = allLeaves.filter((leave) => {
+      const fromDate = new Date(leave.from_date);
+      const toDate = new Date(leave.to_date);
 
-  // Add task or leave
-  const handleAddData = () => {
-    const data = JSON.parse(localStorage.getItem('calendarData')) || { tasks: [], leaves: [] };
-    const newData = { ...data };
+      // Check if the selected date falls within the range of from_date and to_date
+      return selectedDate >= fromDate && selectedDate <= toDate;
+    });
 
-    if (formData.type === 'task') {
-      newData.tasks.push({
-        date: formData.date,
-        time: formData.time,
-        description: formData.description,
-      });
-    } else {
-      newData.leaves.push({
-        date: formData.date,
-        name: formData.name,
-        reason: formData.reason,
-      });
-    }
+    setFilteredLeaves(filteredLeaves);
+  }, [selectedDate, allLeaves]);
 
-    localStorage.setItem('calendarData', JSON.stringify(newData));
-    alert(`${formData.type === 'task' ? 'Task' : 'Leave'} added successfully!`);
-    setFormData({ type: 'task', date: '', time: '', description: '', name: '', reason: '' }); // Reset form
-  };
+  // Define columns for the DataGrid
+  const columns = [
+    { field: 'user_name', headerName: 'User Name', width: 200 },
+    { field: 'reason', headerName: 'Reason', width: 300 },
+    { field: 'status', headerName: 'Status', width: 150 },
+  ];
 
-  // Highlight dates on the calendar and show leave info on hover
+  // Define rows for the DataGrid based on filtered leaves
+  // const rows = useMemo = () =>
+  // filteredLeaves.map((leave, index) => ({
+  //   id: leave.id, // Set a unique ID for each row
+  //   user_name: leave.user_name,
+  //   reason: leave.reason,
+  //   status: leave.status,
+  // })),
+  // [filteredLeaves] // Recalculate rows only when filteredLeaves changes
+
+  const rows = useMemo(
+    () =>
+      filteredLeaves.map((leave, index) => ({
+        id: leave.id,
+        user_name: leave.user_name,
+        reason: leave.reason,
+        status: leave.status,
+      })),
+    [filteredLeaves] // Recalculate rows only when filteredLeaves changes
+  );
 
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6">
-      {/* Calendar Section */}
-      <div className="w-full lg:w-1/3">
-        <h1 className="text-2xl font-bold mb-4">Admin Calendar</h1>
-        <Calendar
-          onChange={setSelectedDate}
-          value={selectedDate}
-          className="shadow-lg border rounded-lg"
-        //   tileContent={tileContent} // Show leave details on hover
-        />
-      </div>
-
-      {/* Task and Leave Details Section */}
-      <div className="w-full lg:w-2/3 bg-gray-50 p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold mb-4">
-          Details for {selectedDate.toDateString()}
-        </h2>
-
-        {/* Tasks Section */}
-        <div className="mb-6">
-          <h3 className="text-lg font-medium text-blue-600 mb-2">Tasks:</h3>
-          <ul className="list-disc pl-6">
-            {tasks.length > 0 ? (
-              tasks.map((task, index) => (
-                <li key={index} className="mb-2">
-                  <span className="font-semibold">{task.time}</span> - {task.description}
-                </li>
-              ))
-            ) : (
-              <li className="text-gray-500">No tasks for this date.</li>
-            )}
-          </ul>
+    <div>
+      {userData ? (
+        <div className="text-sm text-gray-700 mb-4">
+          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User: "{userData.name}"</p>
+          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User ID: {userData.user_id}</p>
         </div>
+      ) : (
+        <p>Loading user data...</p>
+      )}
 
-        {/* Leaves Section */}
-        <div>
-          <h3 className="text-lg font-medium text-red-600 mb-2">Leaves:</h3>
-          <ul className="list-disc pl-6">
-            {leaves.length > 0 ? (
-              leaves.map((leave, index) => (
-                <li key={index} className="mb-2">
-                  <span className="font-semibold">{leave.name}</span> - {leave.reason}
-                </li>
-              ))
-            ) : (
-              <li className="text-gray-500">No leaves for this date.</li>
-            )}
-          </ul>
-        </div>
-      </div>
+      <Grid container spacing={3} p={6}>
+        {/* Calendar Section */}
+        <Grid item xs={12} md={4}>
+          <h1 className="text-2xl font-bold mb-4">Admin Calendar</h1>
+          <Calendar
+            onChange={setSelectedDate}
+            value={selectedDate}
+            className="shadow-lg border rounded-lg"
+          />
+        </Grid>
 
-      {/* Add Data Form */}
-      <div className="w-full lg:w-2/3 bg-white p-6 rounded-lg shadow-lg">
-        <h3 className="text-xl font-bold mb-4">Add Task or Leave</h3>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleAddData();
-          }}
-        >
-          <label className="block mb-2">
-            Type:
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            >
-              <option value="task">Task</option>
-              <option value="leave">Leave</option>
-            </select>
-          </label>
+        {/* Leave Details Section */}
+        <Grid item xs={12} md={8}>
+          <h2 className="text-xl font-semibold mb-4">
+            Details for {selectedDate.toDateString()}
+          </h2>
 
-          <label className="block mb-2">
-            Date:
-            <input
-              type="date"
-              className="border rounded px-2 py-1 w-full"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              required
+          {/* DataGrid for Leaves */}
+          <div style={{ height: 400, width: '100%' }}>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              pageSize={5} // You can adjust the number of rows per page
+              rowsPerPageOptions={[5]} // Allow only 5 rows per page
+              disableSelectionOnClick // Disable row selection on click
+              checkboxSelection // Optionally enable checkbox selection
+              
             />
-          </label>
-
-          {formData.type === 'task' ? (
-            <>
-              <label className="block mb-2">
-                Time:
-                <input
-                  type="time"
-                  className="border rounded px-2 py-1 w-full"
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="block mb-2">
-                Description:
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1 w-full"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  required
-                />
-              </label>
-            </>
-          ) : (
-            <>
-              <label className="block mb-2">
-                Name:
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1 w-full"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="block mb-2">
-                Reason:
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1 w-full"
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  required
-                />
-              </label>
-            </>
-          )}
-
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4"
-          >
-            Add
-          </button>
-        </form>
-      </div>
+          </div>
+        </Grid>
+      </Grid>
     </div>
   );
 }

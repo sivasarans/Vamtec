@@ -1,116 +1,154 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { DataGrid } from '@mui/x-data-grid';
+import { CheckCircle, Cancel } from '@mui/icons-material';
+import ThumbDownOffAltSharpIcon from '@mui/icons-material/ThumbDownOffAltSharp';
+import AddTaskSharpIcon from '@mui/icons-material/AddTaskSharp';
+import Permission from './Permission';
 
 function PermissionStatus() {
-  // Sample permission request data (you can fetch this data from the backend)
-  const permissionRequests = [
-    { id: 1, user_name: 'TVK', date: '2024-12-01', duration: 1.0, status: 'Approved', reason: 'System maintenance' },
-    { id: 2, user_name: 'John Doe', date: '2024-12-02', duration: 0.5, status: 'Pending', reason: 'Team meeting preparation' },
-    { id: 3, user_name: 'Jane Smith', date: '2024-12-03', duration: 1.0, status: 'Rejected', reason: 'Personal work' },
-    { id: 4, user_name: 'Mark Lee', date: '2024-12-05', duration: 0.5, status: 'Pending', reason: 'Urgent client call' },
-  ];
+  const [permissionRequests, setPermissionRequests] = useState([]);
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState('Admin');
+  const [filter, setFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState(''); // New state for search
+  const [showPermissionForm, setShowPermissionForm] = useState(false);
 
-  // Sample user role (you can fetch this from the backend or context)
-  const userRole = 'Admin'; // This can be 'Admin', 'Manager', 'HR Manager', 'Employee', etc.
+  useEffect(() => {
+    const storedUserDetails = JSON.parse(localStorage.getItem('userDetails'));
+    if (storedUserDetails) {
+      setUser(storedUserDetails);
+      setUserRole(storedUserDetails.role || 'Admin');
+    }
+  }, []);
 
-  // State to store the active tab
-  const [activeTab, setActiveTab] = useState('All');
+  useEffect(() => {
+    const fetchPermissionData = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/permission');
+        setPermissionRequests(response.data.result);
+      } catch (error) {
+        console.error("Error fetching permission data", error);
+      }
+    };
+    fetchPermissionData();
+  }, []);
 
-  // Function to handle approval
-  const approvePermission = (permissionId) => {
-    // Logic to approve the permission (e.g., update status in the backend)
-    console.log(`Permission request ${permissionId} approved!`);
+  const updatePermissionStatus = async (id, status) => {
+    try {
+      await axios.put(`http://localhost:5000/permission/update/${id}`, { status });
+      setPermissionRequests(prev => 
+        prev.map(req => (req.id === id ? { ...req, status } : req))
+      );
+    } catch (error) {
+      console.error(`Error updating status to ${status}`, error);
+    }
   };
 
-  // Function to handle rejection
-  const rejectPermission = (permissionId) => {
-    // Logic to reject the permission (e.g., update status in the backend)
-    console.log(`Permission request ${permissionId} rejected!`);
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
   };
 
-  // Filter permission requests based on status
-  const filterRequests = (status) => {
-    if (status === 'All') return permissionRequests;
-    return permissionRequests.filter(request => request.status === status);
-  };
+  // Combined search and filter logic
+  const filteredRows = permissionRequests.filter((row) => {
+    const matchesFilter = filter === 'All' || row.status === filter;
+    const matchesSearch = 
+      row.user_id?.toString().includes(searchTerm) ||
+      row.username?.toLowerCase().includes(searchTerm.toLowerCase()) 
+          return matchesFilter && matchesSearch;
+  });
+
+  const columns = [
+    { field: 'user_id', headerName: 'User ID', width: 150 },
+    { field: 'username', headerName: 'Username', width: 150 },
+    {
+      field: 'date',
+      headerName: 'Date',
+      width: 150,
+      renderCell: (params) => {
+        const date = params.row?.date;
+        return (
+          <span className="px-4 py-2">
+            {date 
+              ? new Date(date).toLocaleDateString('en-GB', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                }).replace(' ', ' - ') 
+              : 'N/A'}
+          </span>
+        );
+      },
+    },
+    { field: 'total_hours', headerName: 'Total Hours', width: 150 },
+    { 
+      field: 'status', 
+      headerName: 'Status', 
+      width: 150, 
+      cellClassName: (params) => {
+        switch (params.value) {
+          case 'Approved': return 'bg-green-200';
+          case 'Rejected': return 'bg-red-200';
+          case 'Pending': return 'bg-yellow-200';
+          default: return '';
+        }
+      }
+    },
+    { field: 'reason', headerName: 'Reason', width: 250 },
+    userRole === 'Admin' && {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 150,
+      renderCell: (params) => (
+        params.row.status === 'Pending' && (
+          <>
+            <AddTaskSharpIcon
+              onClick={() => updatePermissionStatus(params.row.id, 'Approved')} 
+              style={{ color: 'green', cursor: 'pointer', marginRight: '16px' }} 
+            />
+            <Cancel 
+              onClick={() => updatePermissionStatus(params.row.id, 'Rejected')} 
+              style={{ color: 'red', cursor: 'pointer' }} 
+            />
+          </>
+        )
+      )
+    }
+  ].filter(Boolean);
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      {/* Tab Buttons */}
-      <div className="mb-4 flex space-x-4">
-        <button 
-          className={`px-4 py-2 rounded-md ${activeTab === 'All' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('All')}
-        >
-          All
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-md ${activeTab === 'Approved' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Approved')}
-        >
-          Approved
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-md ${activeTab === 'Pending' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Pending')}
-        >
-          Pending
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-md ${activeTab === 'Rejected' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => setActiveTab('Rejected')}
-        >
-          Rejected
-        </button>
+    <div style={{ height: 600, width: '100%' }} className="max-w-4xl mx-auto p-4">
+      <div className="flex justify-between items-center mb-4">
+        <select 
+          value={filter} 
+          onChange={(e) => handleFilterChange(e.target.value)} 
+          className="px-4 py-2 border rounded-md">
+          <option value="All">All</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Pending">Pending</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Search by ID, Username, Email"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-4 py-2 border rounded-md"
+          style={{ width: '300px' }}
+        />
       </div>
-
-      {/* Permission Requests Table */}
-      <div className="overflow-x-auto shadow-md sm:rounded-lg">
-        <table className="min-w-full table-auto text-left">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">User Name</th>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Total Hours</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Reason</th>
-              {userRole === 'Admin' && <th className="px-4 py-2">Actions</th>} {/* Show Actions column for Admin */}
-            </tr>
-          </thead>
-          <tbody>
-            {filterRequests(activeTab).map(request => (
-              <tr key={request.id}>
-                <td className="px-4 py-2">{request.user_name}</td>
-                <td className="px-4 py-2">{request.date}</td>
-                <td className="px-4 py-2">{request.duration * 8}</td> {/* Total Hours = Duration * 8 */}
-                <td className={`px-4 py-2 ${request.status === 'Approved' ? 'bg-green-100' : request.status === 'Pending' ? 'bg-yellow-100' : 'bg-red-100'}`}>
-                  {request.status}
-                </td>
-                <td className="px-4 py-2">{request.reason}</td>
-                {userRole === 'Admin' && (
-                  <td className="px-4 py-2">
-                    {request.status === 'Pending' && (
-                      <>
-                        <button 
-                          onClick={() => approvePermission(request.id)} 
-                          className="px-4 py-2 bg-green-500 text-white rounded-md mr-2"
-                        >
-                          Approve
-                        </button>
-                        <button 
-                          onClick={() => rejectPermission(request.id)} 
-                          className="px-4 py-2 bg-red-500 text-white rounded-md"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <button 
+        onClick={() => setShowPermissionForm(!showPermissionForm)} 
+        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-md">
+        {showPermissionForm ? 'Close Permission Form' : 'Open Permission Form'}
+      </button>
+      {showPermissionForm && <Permission />}
+      <DataGrid 
+        rows={filteredRows} 
+        columns={columns} 
+        pageSize={10} 
+        getRowId={(row) => row.id} 
+        disableSelectionOnClick 
+        className="shadow-md sm:rounded-lg"
+      />
     </div>
   );
 }

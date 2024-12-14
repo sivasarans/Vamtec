@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const permissionRoutes = require('./routes/permission'); // Ensure path is correct
+const leavebalanceRoutes = require('./routes/leaveData');
 
 // Utility to create folders
 ['users_profile', 'users_leave_attachments'].forEach(folder => 
@@ -17,4 +19,10 @@ app.use('/download-leave-requests', require('./routes/reports'));
 app.use('/login', require('./routes/login'));
 app.use('/attandance', require('./routes/attandance'));
 app.use('/add_user', require('./routes/adduser'));
+app.use('/leavebalance', leavebalanceRoutes);
+app.use('/permission', permissionRoutes);
+// app.use('/leavestatus', require('./routes/leaveStatus'));
+app.use('/holidays', require('./routes/holidays'));
+
+
 app.listen(5000, () => console.log(`Server running at http://localhost:5000`));

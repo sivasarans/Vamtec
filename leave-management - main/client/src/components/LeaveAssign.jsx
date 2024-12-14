@@ -1,210 +1,142 @@
 import React, { useState, useEffect } from 'react';
+import { DataGrid } from '@mui/x-data-grid';
+import { TextField, Box, IconButton } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
 
 function LeaveAssign() {
   const [leaveData, setLeaveData] = useState([]);
   const [error, setError] = useState(null);
   const [searchId, setSearchId] = useState('');
-  const [filteredData, setFilteredData] = useState([]);
-  const [userRole, setUserRole] = useState('Admin'); // Default role is Admin
+  const [userRole, setUserRole] = useState('');
+  const [userData, setUserData] = useState(null); // State to hold user data
 
-  // Initialize the leave data in localStorage if it doesn't exist
+  // Fetch user details and set role from localStorage
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem('leaveData'));
-    if (!storedData) {
-      const initialData = [
-        {
-          user_id: 1,
-          name: 'Alice (Admin)',
-          EL: 15.0,
-          SL: 8.0,
-          CL: 6.0,
-          CO: 3.0,
-          SO: 2.0,
-          SML: 3.0,
-          ML: 0.0,
-          CW: 0.0,
-          OOD: 1.0,
-          HL: 2.0,
-          COL: 1.0,
-          WFH: 5.0,
-          WO: 4.0,
-          MP: 0.0,
-          A: 0.0,
-        },
-        {
-          user_id: 2,
-          name: 'Bob (Manager)',
-          EL: 12.0,
-          SL: 5.0,
-          CL: 4.0,
-          CO: 2.0,
-          SO: 1.0,
-          SML: 1.0,
-          ML: 0.0,
-          CW: 0.0,
-          OOD: 0.5,
-          HL: 1.0,
-          COL: 0.5,
-          WFH: 3.0,
-          WO: 4.0,
-          MP: 0.0,
-          A: 0.0,
-        },
-        {
-          user_id: 3,
-          name: 'Charlie (HR Manager)',
-          EL: 10.0,
-          SL: 6.0,
-          CL: 7.0,
-          CO: 2.0,
-          SO: 0.0,
-          SML: 0.0,
-          ML: 0.0,
-          CW: 1.0,
-          OOD: 0.0,
-          HL: 2.0,
-          COL: 0.0,
-          WFH: 2.0,
-          WO: 4.0,
-          MP: 0.0,
-          A: 0.0,
-        },
-        {
-          user_id: 4,
-          name: 'Diana (Employee)',
-          EL: 8.0,
-          SL: 4.0,
-          CL: 3.0,
-          CO: 1.0,
-          SO: 1.0,
-          SML: 0.0,
-          ML: 0.0,
-          CW: 0.0,
-          OOD: 0.5,
-          HL: 1.0,
-          COL: 0.0,
-          WFH: 3.0,
-          WO: 4.0,
-          MP: 0.0,
-          A: 0.0,
-        },
-      ];
-
-      // Save initial data to localStorage
-      localStorage.setItem('leaveData', JSON.stringify(initialData));
-    } else {
-      setLeaveData(storedData);
-      setFilteredData(storedData); // Set initial filtered data to all leave data
+    const storedUserDetails = JSON.parse(localStorage.getItem('userDetails'));
+    if (storedUserDetails && storedUserDetails.role) {
+      setUserRole(storedUserDetails.role);
+      setUserData(storedUserDetails); // Set user data from localStorage
     }
   }, []);
 
-  // Handle input change for editable leave data
-  const handleInputChange = (e, userId, leaveType) => {
-    const updatedData = leaveData.map((user) => {
-      if (user.user_id === userId) {
-        return {
-          ...user,
-          [leaveType]: parseFloat(e.target.value),
-        };
+  useEffect(() => {
+    const fetchLeaveData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/leavebalance');
+        const data = await response.json();
+        setLeaveData(data);
+      } catch (err) {
+        setError('Failed to load leave data.');
       }
-      return user;
-    });
+    };
+    fetchLeaveData();
+  }, []);
 
-    setLeaveData(updatedData);
-    setFilteredData(updatedData); // Keep filtered data updated
-    localStorage.setItem('leaveData', JSON.stringify(updatedData));
-  };
+  const handleSendToBackend = async (row) => {
+    const payload = {
+      EL: parseFloat(row.el) || 0,
+      SL: parseFloat(row.sl) || 0,
+      CL: parseFloat(row.cl) || 0,
+      CO: parseFloat(row.co) || 0,
+      SO: parseFloat(row.so) || 0,
+      SML: parseFloat(row.sml) || 0,
+      ML: parseFloat(row.ml) || 0,
+      CW: parseFloat(row.cw) || 0,
+      OOD: parseFloat(row.ood) || 0,
+      HL: parseFloat(row.hl) || 0,
+      COL: parseFloat(row.col) || 0,
+      WFH: parseFloat(row.wfh) || 0,
+      WO: parseFloat(row.wo) || 0,
+      MP: parseFloat(row.mp) || 0,
+      A: parseFloat(row.a) || 0,
+    };
 
-  // Search for users by ID
-  const handleSearch = (e) => {
-    const searchValue = e.target.value;
-    setSearchId(searchValue);
-    if (searchValue === '') {
-      setFilteredData(leaveData); // Reset to all data when search is empty
-    } else {
-      const filtered = leaveData.filter((user) =>
-        user.user_id.toString().includes(searchValue)
-      );
-      setFilteredData(filtered);
+    try {
+      const response = await fetch(`http://localhost:5000/leavebalance/admin/${row.user_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Error updating leave data');
+    } catch (err) {
+      setError('Failed to update leave data.');
     }
   };
 
-  // Handle role change
-  const handleRoleChange = (e) => {
-    setUserRole(e.target.value);
-  };
+  const handleSearch = (e) => setSearchId(e.target.value);
 
-  // Render leave data form for a single user
-  const renderLeaveData = (user) => {
-    return (
-      <div key={user.user_id} className="bg-white shadow-md rounded-lg p-6 mb-4">
-        <h4 className="text-xl font-semibold mb-4">{user.name}</h4>
-        <div className="grid grid-cols-2 gap-6">
-          {Object.keys(user)
-            .filter((key) => key !== 'user_id' && key !== 'name')
-            .map((leaveType) => (
-              <div key={leaveType} className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 mb-2">{leaveType}</label>
-                <input
-                  type="number"
-                  value={user[leaveType]}
-                  onChange={(e) =>
-                    handleInputChange(e, user.user_id, leaveType)
-                  }
-                  disabled={userRole !== 'Admin'}
-                  className={`${
-                    userRole !== 'Admin' ? 'bg-gray-200' : 'bg-white'
-                  } p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                />
-              </div>
-            ))}
-        </div>
-      </div>
-    );
-  };
+  const columns = [
+    {
+      field: 'actions',
+      headerName: 'Update',
+      width: 80,
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton color="primary" onClick={() => handleSendToBackend(params.row)}>
+          <CheckIcon />
+        </IconButton>
+      ),
+    },
+    { field: 'user_id', headerName: 'User ID', width: 100 },
+    { field: 'name', headerName: 'Name', width: 200 },
+    ...Object.keys(leaveData[0] || {})
+      .filter((key) => key !== 'user_id' && key !== 'name')
+      .map((key) => ({
+        field: key,
+        // headerName: key,
+        headerName: key.charAt(0).toUpperCase() + key.slice(1),
+
+        width: 120,
+        editable: userRole === 'Admin',
+      })),
+  ];
+
+
+  const filteredRows = leaveData.filter((row) => row.user_id?.toString().includes(searchId));
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <Box sx={{ maxWidth: 1000, mx: 'auto', p: 2 }}>
       <h3 className="text-2xl font-bold mb-6">Leave Assignment</h3>
 
-      {/* Role Selection Dropdown */}
-      <div className="mb-4">
-        <label className="text-sm font-medium text-gray-700 mb-2">Select Role</label>
-        <select
-          value={userRole}
-          onChange={handleRoleChange}
-          className="p-2 border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="Admin">Admin</option>
-          <option value="Manager">Manager</option>
-          <option value="HR">HR</option>
-          <option value="Employee">Employee</option>
-        </select>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-4 flex items-center">
-        <input
-          type="text"
-          placeholder="Search by User ID"
-          value={searchId}
-          onChange={handleSearch}
-          className="p-2 border rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {/* Display Error */}
-      {error && <div className="bg-red-500 text-white p-2 rounded-md mb-4">{error}</div>}
-      
-      {/* Render filtered leave data */}
-      {filteredData.length > 0 ? (
-        <div>
-          {filteredData.map((user) => renderLeaveData(user))}
+      {userData ? (
+        <div className="text-sm text-gray-700 mb-4">
+          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User: {userData.name}</p>
+          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User ID: {userData.user_id}</p>
         </div>
       ) : (
-        <p>No leave data found for this search.</p>
+        <p>Loading user data...</p>
       )}
-    </div>
+
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          label="Search by User ID"
+          variant="outlined"
+          fullWidth
+          value={searchId}
+          onChange={handleSearch}
+        />
+      </Box>
+
+      {error && <Box sx={{ color: 'red', mb: 2 }}>{error}</Box>}
+
+      <Box sx={{ height: 600, width: '100%' }}>
+        <DataGrid
+          rows={filteredRows}
+          columns={columns}
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20]}
+          getRowId={(row) => row.user_id}
+          onCellEditCommit={(params) => {
+            const updatedData = leaveData.map((row) =>
+              row.user_id === params.id
+                ? { ...row, [params.field]: parseFloat(params.value) || row[params.field] }
+                : row
+            );
+            setLeaveData(updatedData);
+          }}
+        />
+      </Box>
+    </Box>
   );
 }
 

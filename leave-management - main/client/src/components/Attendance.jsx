@@ -1,146 +1,213 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { DataGrid } from "@mui/x-data-grid";
+import { Menu } from "@headlessui/react";
+import axios from "axios";
 
 const Attendance = () => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [users, setUsers] = useState([]);
-  const [attendanceData, setAttendanceData] = useState({});
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10)); // Default to today's date
-  const [user, setUser] = useState(null); // State to store user details
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(""); // Success message state
 
-  // Initialize attendance data and fetch user details from localStorage
+  // Fetch users (unchanged)
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:5000/attandance/users");
+      setUsers(
+        response.data.users.map((user) => ({
+          ...user,
+          attendance: {}, // Initialize attendance object
+        }))
+      );
+    } catch (err) {
+      console.error("Error fetching users:", err);
+    }
+    setLoading(false);
+  };
+
+  // Fetch attendance for the selected date
+  const fetchAttendance = async (date) => {
+    try {
+      const response = await axios.get("http://localhost:5000/attandance", {
+        params: { date },
+      });
+      if (response.data.success) {
+        const attendanceMap = response.data.attendance_date.reduce((acc, record) => {
+          acc[record.user_id] = {
+            in: record.in_time,
+            out: record.out_time,
+            updatedAt: record.updated_at || "N/A",
+          };
+          return acc;
+        }, {});
+
+        setUsers((prevUsers) =>
+          prevUsers.map((user) => ({
+            ...user,
+            attendance: {
+              ...user.attendance,
+              [date]: attendanceMap[user.user_id] || {},
+            },
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching attendance data:", err);
+    }
+  };
+
+  const setDefaultTimes = () => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) => {
+        if (!user.attendance[selectedDate]) user.attendance[selectedDate] = {};
+  
+        // Check if 'in' time is either missing or set to "00:00:00"
+        if (!user.attendance[selectedDate].in || user.attendance[selectedDate].in === "00:00:00") {
+          user.attendance[selectedDate].in = "09:30:00";
+        }
+  
+        // Check if 'out' time is either missing or set to "00:00:00"
+        if (!user.attendance[selectedDate].out || user.attendance[selectedDate].out === "00:00:00") {
+          user.attendance[selectedDate].out = "17:00:00";
+        }
+  
+        return user;
+      })
+    );
+  };
+  
+
   useEffect(() => {
-    const storedUserDetails = JSON.parse(localStorage.getItem('userDetails'));
-    if (storedUserDetails) {
-      setUser(storedUserDetails); // Set user details if available
-    }
-
-    const sampleData = [
-      { username: "John", attendance: {} },
-      { username: "Jane", attendance: {} },
-      { username: "Doe", attendance: {} },
-    ];
-
-    const existingData = localStorage.getItem("attendance_demo");
-    if (!existingData) {
-      localStorage.setItem("attendance_demo", JSON.stringify(sampleData));
-    }
-
-    const fetchedData = JSON.parse(localStorage.getItem("attendance_demo"));
-    setUsers(fetchedData);
-    setAttendanceData(fetchedData);
+    fetchUsers();
   }, []);
 
-  // Handle date selection
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-  };
+  useEffect(() => {
+    fetchAttendance(selectedDate);
+  }, [selectedDate]);
 
-  // Handle input changes for attendance
-  const handleInputChange = (username, type, value) => {
-    // Use the role from the user object, no need for state anymore
-    if (user && user.role === "Admin") {
-      const updatedData = attendanceData.map((user) => {
-        if (user.username === username) {
-          if (!user.attendance[selectedDate]) {
-            user.attendance[selectedDate] = { in: "09:30", out: "17:00" }; // Updated default times
-          }
-          user.attendance[selectedDate][type] = value;
-        }
-        return user;
-      });
-      setAttendanceData(updatedData);
-    }
-  };
+  const handleDateChange = (e) => setSelectedDate(e.target.value);
 
-  // Update localStorage with the modified attendance data (save all values)
-  const updateAttendance = () => {
-    const updatedData = attendanceData.map((user) => {
-      if (!user.attendance[selectedDate]) {
-        // Ensure default times are added for users without attendance for the selected date
-        user.attendance[selectedDate] = { in: "09:30", out: "17:00" }; // Updated default times
+  const handleUpdate = (id, type, value) => {
+    const updatedUsers = users.map((user) => {
+      if (user.id === id) {
+        if (!user.attendance[selectedDate]) user.attendance[selectedDate] = {};
+        user.attendance[selectedDate][type] = value;
       }
       return user;
     });
-
-    localStorage.setItem("attendance_demo", JSON.stringify(updatedData));
-    alert("Attendance updated successfully!");
+    setUsers(updatedUsers);
   };
 
+  const handleSubmitAll = async () => {
+    const attendanceData = users.map((user) => ({
+      userId: user.user_id,
+      name: user.name,
+      date: selectedDate,
+      inTime: user.attendance[selectedDate]?.in || "00:00:00",
+      outTime: user.attendance[selectedDate]?.out || "00:00:00",
+    }));
+
+    try {
+      const response = await axios.post("http://localhost:5000/attandance/bulk-update", attendanceData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 200) {
+        fetchAttendance(selectedDate); // Refresh attendance data
+        setSuccessMessage("Attendance updated successfully!"); // Show success message
+        setTimeout(() => setSuccessMessage(""), 3000); // Hide message after 3 seconds
+      }
+    } catch (err) {
+      console.error("Error updating attendance for all users:", err);
+    }
+  };
+
+  const columns = [
+    { field: "name", headerName: "Name", width: 200 },
+    {
+      field: "in",
+      headerName: "In Time",
+      width: 150,
+      renderCell: (params) => (
+        <input
+          type="time"
+          value={params.row.attendance[selectedDate]?.in || "00:00"}
+          onChange={(e) => handleUpdate(params.row.id, "in", e.target.value)}
+          className="border rounded px-2 py-1 w-full"
+        />
+      ),
+    },
+    {
+      field: "out",
+      headerName: "Out Time",
+      width: 150,
+      renderCell: (params) => (
+        <input
+          type="time"
+          value={params.row.attendance[selectedDate]?.out || "00:00"}
+          onChange={(e) => handleUpdate(params.row.id, "out", e.target.value)}
+          className="border rounded px-2 py-1 w-full"
+        />
+      ),
+    },
+    {
+      field: "updatedAt",
+      headerName: "Updated At",
+      width: 180,
+      renderCell: (params) =>
+        params.row.attendance[selectedDate]?.updatedAt || "Not Made Attandance",
+    },
+  ];
+
   return (
-    <div className="p-4">
-      {/* Display user ID and role at the top of the page */}
-      {user && (
-        <div className="mb-4">
-          <h2 className="text-xl">User ID: {user.user_id}</h2>
-          <h3 className="text-lg">Role: {user.role}</h3>
+    <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
+      <h1 className="text-2xl font-bold mb-6">Attendance Tracker</h1>
+
+      {successMessage && (
+        <div className="w-full bg-green-500 text-white text-center py-2 mb-4">
+          {successMessage}
         </div>
       )}
 
-      {/* Attendance Section */}
-      <div className="flex justify-between items-center mb-4">
-        <div><h1>Attendance</h1><hr /></div>
-        <div className="flex gap-4">
-          <div>
-            <label htmlFor="date" className="mr-2">Select Date:</label>
-            <input
-              type="date"
-              id="date"
-              value={selectedDate}
-              onChange={handleDateChange}
-              className="border rounded px-2 py-1"
-            />
-          </div>
-        </div>
+      <div className="mb-4 flex items-center space-x-4">
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={handleDateChange}
+          className="px-2 py-1 border rounded"
+        />
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={updateAttendance}
+          onClick={setDefaultTimes}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
         >
-          Update
+          Set Default Times
+        </button>
+        <button
+          onClick={handleSubmitAll}
+          className="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Update Attendance
         </button>
       </div>
 
-      {/* Attendance Table */}
-      <table className="min-w-full border-collapse border border-gray-300">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 px-4 py-2">Username</th>
-            <th className="border border-gray-300 px-4 py-2">In</th>
-            <th className="border border-gray-300 px-4 py-2">Out</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.username}>
-              <td className="border border-gray-300 px-4 py-2">{user.username}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                <input
-                  type="time"
-                  value={
-                    user.attendance[selectedDate]?.in || "09:30" // Default in time
-                  }
-                  onChange={(e) =>
-                    handleInputChange(user.username, "in", e.target.value)
-                  }
-                  className={`w-full ${user.role === "employee" ? "bg-gray-200" : ""}`}
-                  readOnly={user.role === "employee"}
-                />
-              </td>
-              <td className="border border-gray-300 px-4 py-2">
-                <input
-                  type="time"
-                  value={
-                    user.attendance[selectedDate]?.out || "17:00" // Default out time
-                  }
-                  onChange={(e) =>
-                    handleInputChange(user.username, "out", e.target.value)
-                  }
-                  className={`w-full ${user.role === "employee" ? "bg-gray-200" : ""}`}
-                  readOnly={user.role === "employee"}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className = "w-full bg-white shadow-md rounded-lg p-4 m-4">
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <DataGrid
+            rows={users}
+            columns={columns}
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+            autoHeight
+            className="bg-gray-50"
+            getRowId={(row) => row.user_id} // Unique identifier for rows
+          />
+        )}
+      </div>
     </div>
   );
 };
