@@ -16,23 +16,46 @@ CREATE TABLE Users (
 );
 ALTER TABLE Users ADD CONSTRAINT unique_user_id UNIQUE (user_id);
 ALTER TABLE Users ADD COLUMN profile_picture VARCHAR(255);
+--------------------------permission-----------------------
+-- Drop Permissions table if it already exists
+DROP TABLE IF EXISTS Permissions CASCADE;
 
-
+-- Step 1: Recreate the Permissions Table
 CREATE TABLE Permissions (
     id          SERIAL PRIMARY KEY,
-    user_id     VARCHAR REFERENCES Users(user_id) ON DELETE CASCADE,
+    user_id     VARCHAR(150) REFERENCES Users(user_id) ON DELETE CASCADE,
+    username    VARCHAR(100), -- This will store the username automatically
     date        DATE NOT NULL,
     in_time     TIME NOT NULL, -- Start time of the workday
     out_time    TIME NOT NULL, -- End time of the workday
     total_hours FLOAT GENERATED ALWAYS AS (
-        EXTRACT(EPOCH FROM (out_time - in_time)) / 3600 -- Calculate total hours
+        EXTRACT(EPOCH FROM (out_time - in_time)) / 3600
     ) STORED,
-    status      VARCHAR(50) DEFAULT 'Pending', -- Status of the permission (e.g., Pending, Approved)
-    reason      TEXT -- Reason for the permission
+    status      VARCHAR(50) DEFAULT 'Pending',
+    reason      TEXT,
+    CONSTRAINT check_time_validity CHECK (out_time > in_time)
 );
 
-ALTER TABLE Permissions
-ADD CONSTRAINT check_time_validity CHECK (out_time > in_time);
+-- Step 2: Create a Trigger Function to Fetch Username
+CREATE OR REPLACE FUNCTION set_username_from_user_id()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Fetch username based on the provided user_id
+    SELECT name INTO NEW.username
+    FROM Users
+    WHERE user_id = NEW.user_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Step 3: Create a Trigger to Automatically Update Username
+CREATE TRIGGER trigger_set_username
+BEFORE INSERT ON Permissions
+FOR EACH ROW
+EXECUTE FUNCTION set_username_from_user_id();
+
+------------------------------------------------------------------
 
 --LEAVE STATUS
 CREATE TABLE leave_applications ( 

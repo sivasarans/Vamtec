@@ -17,9 +17,4 @@ permission status,
 user register,
 calender,
 leave Reports
-
-
-
-
-undone:
-holiday list(backend tested), attandance.
+attandance
