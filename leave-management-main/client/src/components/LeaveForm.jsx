@@ -34,7 +34,7 @@ const LeaveForm = () => {
       if (!userData) return;
       try {
         console.log("Fetching leave data...");  // Debug line
-        const response = await axios.get('http://localhost:5000/leavebalance');
+        const response = await axios.get('http://localhost:5000/leave');
         console.log("GET Response Status:", response.status);  // Debug line
         const data = response.data;
         console.log("Leave Data:", data);  // Debug line
@@ -78,15 +78,15 @@ const LeaveForm = () => {
       leave_days: leaveDays, 
       reason: reason 
     };
-  
+  console.log(leaveRequest);
     try {
       // Step 1: Apply leave request
-      const response = await axios.post('http://localhost:5000/leavebalance/apply_leave', leaveRequest);
+      const response = await axios.post('http://localhost:5000/leave/apply_leave', leaveRequest);
       
       // Check if leave application was successful
       if (response.status === 200 || response.status === 201) {
         // Step 2: Reduce leave balance after successful leave application
-        const reduceLeaveBalanceResponse = await axios.put('http://localhost:5000/leavebalance/reduce_leave_balance', {
+        const reduceLeaveBalanceResponse = await axios.put('http://localhost:5000/leave/reduce_leave_balance', {
           user_id: userData.user_id,
           leave_type: leaveType.toLowerCase(),
           leave_days: leaveDays
@@ -160,7 +160,7 @@ const LeaveForm = () => {
       ) : <p>Loading user data...</p>}
 
       <div className="flex overflow-x-auto">
-        {sortedLeaveData.map((leave, index) => leave !== 'name' && (
+        {sortedLeaveData.map((leave, index) => leave !== 'name' && leave !== 'updated_time' && (
           <div key={index} className="flex-shrink-0 w-32 p-4 border bg-gray-100 rounded-md mx-2 my-2">
             <p className="font-medium">{leave.toUpperCase()}</p>
             <p className="text-sm text-blue-500">{leaveData[leave]} Day(s) Left</p>

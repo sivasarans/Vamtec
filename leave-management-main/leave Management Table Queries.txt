@@ -4,18 +4,19 @@ CREATE TABLE Roles (
     role_name VARCHAR(50) UNIQUE NOT NULL
 );
 
--- Users Table
 CREATE TABLE Users (
-    id        SERIAL PRIMARY KEY,
-    name      VARCHAR(100) NOT NULL,
-    email     VARCHAR(150),
-    role_id   INT REFERENCES Roles(id),
-    user_id   VARCHAR(150),
-    role_name VARCHAR(50) REFERENCES Roles(role_name),
-    password  VARCHAR(255)
+    id               SERIAL PRIMARY KEY,
+    name             VARCHAR(100) NOT NULL,
+    email            VARCHAR(150),
+    user_id          VARCHAR(150) UNIQUE,
+    role_name        VARCHAR(50) REFERENCES Roles(role_name),
+    password         VARCHAR(255),
+    profile_picture  VARCHAR(255),
+    gender           VARCHAR(10),
+    joining_date     DATE,
+    status           VARCHAR(50)
 );
-ALTER TABLE Users ADD CONSTRAINT unique_user_id UNIQUE (user_id);
-ALTER TABLE Users ADD COLUMN profile_picture VARCHAR(255);
+
 --------------------------permission-----------------------
 -- Drop Permissions table if it already exists
 DROP TABLE IF EXISTS Permissions CASCADE;
@@ -74,6 +75,25 @@ CREATE TABLE leave_applications (
 ALTER TABLE leave_applications
 ADD COLUMN reject_reason TEXT;
 
+CREATE OR REPLACE FUNCTION leave_application_validation_for_joining_date()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Check if the leave from_date is after the user's joining_date
+  IF NEW.from_date < (SELECT joining_date FROM users WHERE user_id = NEW.user_id) THEN
+    RAISE EXCEPTION 'Leave start date cannot be earlier than the joining date.';
+  END IF;
+  
+  -- Return the new row to continue with the insert
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER leave_application_validation_for_joining_date
+BEFORE INSERT OR UPDATE ON leave_applications
+FOR EACH ROW
+EXECUTE FUNCTION leave_application_validation_for_joining_date();
+
+
 
 
 
@@ -115,6 +135,21 @@ AFTER INSERT ON Users
 FOR EACH ROW
 EXECUTE FUNCTION insert_leave_data_after_user_creation();
 
+-- Create or replace the function with the new name
+CREATE OR REPLACE FUNCTION leave_data_updated_timestamp()
+RETURNS TRIGGER AS $$ 
+BEGIN
+  NEW.updated_time = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger with the new function name
+CREATE TRIGGER update_leave_data_timestamp
+BEFORE UPDATE ON leave_data
+FOR EACH ROW
+EXECUTE FUNCTION leave_data_updated_timestamp();
+----------------------------------------------------------------
 
 
 

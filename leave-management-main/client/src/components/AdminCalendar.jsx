@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
 import { Grid } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 
 function AdminCalendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [fromDate, setFromDate] = useState(new Date()); // Set default to current date
+  const [toDate, setToDate] = useState(new Date()); // Set default to current date
   const [allLeaves, setAllLeaves] = useState([]); // Store all leaves
-  const [filteredLeaves, setFilteredLeaves] = useState([]); // Filtered leaves for the selected date
-  const [userData, setUserData] = useState(null);
+  const [filteredLeaves, setFilteredLeaves] = useState([]); // Filtered leaves for the selected date range
 
   // Load leave applications from backend (fetched once)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const leavesResponse = await axios.get('http://localhost:5000/leavebalance/get/leave-applications');
+        const leavesResponse = await axios.get('http://localhost:5000/leave/get-all-status');
         setAllLeaves(leavesResponse.data); // Set all leaves in state
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -25,85 +26,103 @@ function AdminCalendar() {
     fetchData();
   }, []);
 
+  // Utility function to reset time to midnight for date comparison
+  const resetTimeToMidnight = (date) => {
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0); // Set time to midnight
+    return newDate;
+  };
+
+  // Filter leaves based on the selected date range (from_date and to_date)
   useEffect(() => {
-    const fetchUserData = async () => {
-      const storedUserData = JSON.parse(localStorage.getItem('userDetails'));
-      if (storedUserData) setUserData(storedUserData);
-    };
-    fetchUserData();
-  }, []);
+    if (fromDate && toDate) {
+      const resetFromDate = resetTimeToMidnight(fromDate); // Reset time for fromDate
+      const resetToDate = resetTimeToMidnight(toDate); // Reset time for toDate
 
-  // Filter leaves based on the selected date (between from_date and to_date)
-  useEffect(() => {
-    const formattedDate = selectedDate.toISOString().split('T')[0]; // Format selected date to YYYY-MM-DD
+      const filteredLeaves = allLeaves.filter((leave) => {
+        const leaveFromDate = resetTimeToMidnight(new Date(leave.from_date)); // Reset time for leave's from_date
+        const leaveToDate = resetTimeToMidnight(new Date(leave.to_date)); // Reset time for leave's to_date
 
-    // Filter leaves for the selected date, taking into account the range
-    const filteredLeaves = allLeaves.filter((leave) => {
-      const fromDate = new Date(leave.from_date);
-      const toDate = new Date(leave.to_date);
+        // Check if the leave's date range falls within the selected range
+        return leaveFromDate >= resetFromDate && leaveToDate <= resetToDate;
+      });
 
-      // Check if the selected date falls within the range of from_date and to_date
-      return selectedDate >= fromDate && selectedDate <= toDate;
-    });
-
-    setFilteredLeaves(filteredLeaves);
-  }, [selectedDate, allLeaves]);
+      setFilteredLeaves(filteredLeaves);
+    } else {
+      setFilteredLeaves([]); // No filter applied if fromDate or toDate is null
+    }
+  }, [fromDate, toDate, allLeaves]); // Runs when fromDate, toDate, or allLeaves changes
 
   // Define columns for the DataGrid
   const columns = [
     { field: 'user_name', headerName: 'User Name', width: 200 },
     { field: 'reason', headerName: 'Reason', width: 300 },
+    { field: 'from_date', headerName: 'From', width: 300 },
+    { field: 'to_date', headerName: 'To', width: 300 },
     { field: 'status', headerName: 'Status', width: 150 },
   ];
-
-  // Define rows for the DataGrid based on filtered leaves
-  // const rows = useMemo = () =>
-  // filteredLeaves.map((leave, index) => ({
-  //   id: leave.id, // Set a unique ID for each row
-  //   user_name: leave.user_name,
-  //   reason: leave.reason,
-  //   status: leave.status,
-  // })),
-  // [filteredLeaves] // Recalculate rows only when filteredLeaves changes
 
   const rows = useMemo(
     () =>
       filteredLeaves.map((leave, index) => ({
         id: leave.id,
         user_name: leave.user_name,
+        from_date: new Date(leave.from_date).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }),
+        to_date: new Date(leave.to_date).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }),
         reason: leave.reason,
         status: leave.status,
       })),
     [filteredLeaves] // Recalculate rows only when filteredLeaves changes
   );
 
-
   return (
     <div>
-      {userData ? (
-        <div className="text-sm text-gray-700 mb-4">
-          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User: "{userData.name}"</p>
-          <p className="inline-block bg-green-100 px-2 py-1 m-2 rounded-md">User ID: {userData.user_id}</p>
-        </div>
-      ) : (
-        <p>Loading user data...</p>
-      )}
-
       <Grid container spacing={3} p={6}>
-        {/* Calendar Section */}
-        <Grid item xs={12} md={4}>
-          <h1 className="text-2xl font-bold mb-4">Admin Calendar</h1>
-          <Calendar
-            onChange={setSelectedDate}
-            value={selectedDate}
-            className="shadow-lg border rounded-lg"
-          />
-        </Grid>
+        {/* Date Picker Section at the top of the table */}
+        <Grid item xs={12}>
+          <h1 className="text-2xl font-bold mb-4">Leave Calendar</h1>
+          
+          <Grid container spacing={3} justifyContent="center">
+            <Grid item xs={12} md={5}>
+              <div className="mb-4">
+                <h2 className="text-lg font-medium text-gray-700 mb-2">Select From Date</h2>
+                <DatePicker
+                  selected={fromDate}
+                  onChange={setFromDate}
+                  dateFormat="dd-MMM-yyyy"
+                  className="shadow-lg border-2 border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholderText="Select From Date"
+                />
+              </div>
+            </Grid>
 
-        {/* Leave Details Section */}
-        <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={5}>
+              <div className="mb-4">
+                <h2 className="text-lg font-medium text-gray-700 mb-2">Select To Date</h2>
+                <DatePicker
+                  selected={toDate}
+                  onChange={setToDate}
+                  dateFormat="dd-MMM-yyyy"
+                  className="shadow-lg border-2 border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholderText="Select To Date"
+                />
+              </div>
+            </Grid>
+          </Grid>
+        </Grid>
+        
+        {/* Leave Details Section below the date pickers */}
+        <Grid item xs={12}>
           <h2 className="text-xl font-semibold mb-4">
-            Details for {selectedDate.toDateString()}
+            Leave Details from {fromDate?.toDateString()} to {toDate?.toDateString()}
           </h2>
 
           {/* DataGrid for Leaves */}
@@ -115,7 +134,6 @@ function AdminCalendar() {
               rowsPerPageOptions={[5]} // Allow only 5 rows per page
               disableSelectionOnClick // Disable row selection on click
               checkboxSelection // Optionally enable checkbox selection
-              
             />
           </div>
         </Grid>

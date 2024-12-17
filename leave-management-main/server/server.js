@@ -23,7 +23,7 @@ app.use('/download-leave-requests', require('./routes/reports'));
 app.use('/login', require('./routes/login'));
 app.use('/attandance', require('./routes/attandance'));
 app.use('/add_user', require('./routes/adduser'));
-app.use('/leavebalance', leavebalanceRoutes);
+app.use('/leave', require('./routes/leaveData'));
 app.use('/permission', permissionRoutes);
 app.use('/holidays', require('./routes/holidays'));
 

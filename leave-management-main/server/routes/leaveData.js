@@ -125,7 +125,7 @@ router.get('/', async (req, res) => {
   });
   
 
-  router.get('/get/leave-applications', async (req, res) => {
+  router.get('/get-all-status', async (req, res) => {
     try {
       const result = await pool.query('SELECT * FROM leave_applications ORDER BY applied_date DESC');
       res.json(result.rows);
@@ -135,7 +135,7 @@ router.get('/', async (req, res) => {
     }
   });
 
-  router.put('/put/leave-applications/:id', async (req, res) => {
+  router.put('/update-leave-status/:id', async (req, res) => {
     const { id } = req.params; // Extract 'id' from route parameters
     const { status, reject_reason } = req.body; // Extract 'status' and 'reject_reason' from request body
     
@@ -157,7 +157,7 @@ router.get('/', async (req, res) => {
     }
   });
 
-  router.delete('/delete-leaverequest/:id', async (req, res) => {
+  router.delete('/delete-leave-request/:id', async (req, res) => {
     const { id } = req.params; // Extract the leave application ID from the route parameters
   
     try {

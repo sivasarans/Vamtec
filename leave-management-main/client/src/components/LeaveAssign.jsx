@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
-import { TextField, Box, IconButton } from '@mui/material';
+import { TextField, Box, IconButton, Alert } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 
 function LeaveAssign() {
@@ -9,6 +9,7 @@ function LeaveAssign() {
   const [searchId, setSearchId] = useState('');
   const [userRole, setUserRole] = useState('');
   const [userData, setUserData] = useState(null); // State to hold user data
+  const [successMessage, setSuccessMessage] = useState(null);
 
   // Fetch user details and set role from localStorage
   useEffect(() => {
@@ -22,7 +23,7 @@ function LeaveAssign() {
   useEffect(() => {
     const fetchLeaveData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/leavebalance');
+        const response = await fetch('http://localhost:5000/leave');
         const data = await response.json();
         setLeaveData(data);
       } catch (err) {
@@ -52,12 +53,17 @@ function LeaveAssign() {
     };
 
     try {
-      const response = await fetch(`http://localhost:5000/leavebalance/admin/${row.user_id}`, {
+      const response = await fetch(`http://localhost:5000/leave/admin/${row.user_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!response.ok) throw new Error('Error updating leave data');
+      setSuccessMessage('Leave data updated successfully!');
+
+      // Clear success message after 2 seconds
+      setTimeout(() => setSuccessMessage(null), 2000);
+
     } catch (err) {
       setError('Failed to update leave data.');
     }
@@ -80,17 +86,24 @@ function LeaveAssign() {
     { field: 'user_id', headerName: 'User ID', width: 100 },
     { field: 'name', headerName: 'Name', width: 200 },
     ...Object.keys(leaveData[0] || {})
-      .filter((key) => key !== 'user_id' && key !== 'name')
+      .filter((key) => key !== 'user_id' && key !== 'name' && key !== 'updated_time') // Exclude updated_time from dynamic fields
       .map((key) => ({
         field: key,
-        // headerName: key,
         headerName: key.charAt(0).toUpperCase() + key.slice(1),
-
         width: 120,
         editable: userRole === 'Admin',
       })),
+    {
+      field: 'updated_time',
+      headerName: 'Updated Time',
+      width: 180,
+      renderCell: (params) => {
+        const date = new Date(params.value);
+        const formattedTime = `${date.getDate().toString().padStart(2, '0')}-${date.toLocaleString('en-GB', { month: 'short' })}-${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}${date.getHours() >= 12 ? 'pm' : 'am'}`;
+        return formattedTime;
+      },
+    },
   ];
-
 
   const filteredRows = leaveData.filter((row) => row.user_id?.toString().includes(searchId));
 
@@ -105,6 +118,12 @@ function LeaveAssign() {
         </div>
       ) : (
         <p>Loading user data...</p>
+      )}
+
+      {successMessage && (
+        <Alert variant="filled" severity="success" sx={{ marginBottom: 2 }}>
+          {successMessage}
+        </Alert>
       )}
 
       <Box sx={{ mb: 2 }}>

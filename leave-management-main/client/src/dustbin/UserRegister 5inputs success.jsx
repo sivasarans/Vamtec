@@ -12,9 +12,6 @@ const UserRegisterScript = () => {
     role_name: 'Admin',
     password: '1',
     profile_picture: null,
-    gender: 'Male', // Added gender field
-    joining_date: new Date().toISOString().split('T')[0], // Added joining_date field
-    status: 'Active', // Added status field
   });
   const [alertMessage, setAlertMessage] = useState({ message: '', type: '' });
   const [users, setUsers] = useState([]);
@@ -62,8 +59,10 @@ const UserRegisterScript = () => {
         ? `http://localhost:5000/add_user/${editingUser.user_id}` // Update if editing
         : 'http://localhost:5000/add_user'; // Add new user if not editing
 
-      const method = editingUser ? 'put' : 'post';
-      await axios[method](url, formDataToSubmit, {
+        const method = editingUser ? 'put' : 'post';
+        await axios[method](url, formDataToSubmit, {
+        
+        // await axios.post(url, formDataToSubmit, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -120,20 +119,22 @@ const UserRegisterScript = () => {
   }, []);
 
   return (
+
     <UserRegisterUI
-      formData={formData}
-      setFormData={setFormData} // Pass setFormData here
-      handleChange={handleChange}
-      handleFileChange={handleFileChange}
-      handleSubmit={handleSubmit}
-      users={users}
-      alertMessage={alertMessage}
-      handleNavigate={handleNavigate}
-      handleEdit={handleEdit}
-      handleDelete={handleDelete}
-      editingUser={editingUser}
-      setEditingUser={setEditingUser}
-    />
+  formData={formData}
+  setFormData={setFormData} // Pass setFormData here
+  handleChange={handleChange}
+  handleFileChange={handleFileChange}
+  handleSubmit={handleSubmit}
+  users={users}
+  alertMessage={alertMessage}
+  handleNavigate={handleNavigate}
+  handleEdit={handleEdit}
+  handleDelete={handleDelete}
+  editingUser={editingUser}
+  setEditingUser={setEditingUser }
+/>
+
   );
 };
 

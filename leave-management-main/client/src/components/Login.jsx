@@ -4,8 +4,6 @@ import { setUser } from '../redux/userSlice';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-
-
 const Login = ({ onLogin }) => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +13,7 @@ const Login = ({ onLogin }) => {
   const navigate = useNavigate();
   const loggedUser = useSelector((state) => state.user.logged_user);
 
-  console.log('Logged User:', loggedUser);
+  console.log('Logged User:', loggedUser); // redux won't work if refrshed
   
 
   const handleLogin = async (e) => {
