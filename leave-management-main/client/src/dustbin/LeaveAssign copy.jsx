@@ -144,11 +144,6 @@ function LeaveAssign() {
             );
             setLeaveData(updatedData);
           }}
-          sx={{
-            '& .MuiDataGrid-row:nth-of-type(even)': {
-              backgroundColor: 'rgba(208, 220, 223, 0.37)', // Light grey for even rows
-            },
-          }}
         />
       </Box>
     </Box>

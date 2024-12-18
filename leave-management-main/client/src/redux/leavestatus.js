@@ -18,13 +18,16 @@ export const deleteLeaveRequests = createAsyncThunk("delete-leave-requests", asy
 
 export const updateLeaveStatus = createAsyncThunk(
   "leavestatus/updateLeaveStatus",
-  async ({ requestId, newStatus, rejectReason = '' }, { rejectWithValue }) => {
+  async ({ requestId, newStatus, rejectReason = '',leave_days, leave_type, user_id  }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
         `http://localhost:5000/leave/update-leave-status/${requestId}`,
         {
           status: newStatus,
           reject_reason: rejectReason,
+          leave_days:leave_days,
+          leave_type:leave_type,
+          user_id:user_id,
         }
       );
       return { requestId, newStatus, rejectReason };

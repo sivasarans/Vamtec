@@ -18,3 +18,10 @@ user register,
 calender,
 leave Reports
 attandance
+
+
+Validation:
+* leave start date > joining date
+* leave balance rebalance if 'rejected'
+
+

@@ -1,11 +1,9 @@
 import React, { useState, useEffect} from 'react';
-import axios from 'axios';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { useNavigate } from 'react-router-dom';
-import { TextField, Box, IconButton, Button } from '@mui/material';
+import { IconButton, Button } from '@mui/material';
 import { NavLink } from 'react-router-dom';
 import { useSelector , useDispatch } from 'react-redux';
 import { fetchLeaveRequests, deleteLeaveRequests , updateLeaveStatus } from "../redux/leavestatus";
@@ -36,31 +34,47 @@ function LeaveStatus() {
     }
   }, []);
 
-  const handleReject = (requestId) => {
-    const reason = window.prompt('Enter the reason for rejecting this leave request:');
-    if (reason) {
-      dispatch(updateLeaveStatus({requestId, newStatus: 'Rejected',rejectReason: reason}));
-    } else {
-      alert('Rejection reason is required!');
-    }
-  };
-
   const filterRequests = (status) => {
     if (status === 'All') return leavestatusData;
     return leavestatusData.filter((request) => request.status === status);
   };
+
   const ApproveAllSelected = async () => {
     await selectedRows.forEach((id) => {
-      dispatch(updateLeaveStatus({requestId:id,newStatus: 'Approved'}));
+      const selectedRow = leavestatusData.find((row) => row.id === id);
+      if (selectedRow) {
+        dispatch(updateLeaveStatus({
+          requestId: id,
+          newStatus: 'Approved',
+          leave_days: selectedRow.leave_days, // Extra field
+          leave_type: selectedRow.leave_type,
+          user_id:selectedRow.user_id, // Extra field
+        }));
+      }
     });
   };
+  
   const RejectAllSelected = async () => {
-    const reason = window.prompt('Enter the reason for rejecting this leave request:');
-
-    await selectedRows.forEach((id) => {
-      dispatch(updateLeaveStatus({requestId:id,newStatus: 'Rejected', rejectReason: reason}));
-    });
+    const reason = window.prompt('Enter the reason for rejecting these leave requests:');
+    if (reason) {
+      await selectedRows.forEach((id) => {
+        const selectedRow = leavestatusData.find((row) => row.id === id);
+        if (selectedRow) {
+          dispatch(updateLeaveStatus({
+            requestId: id,
+            newStatus: 'Rejected',
+            rejectReason: reason,
+            leave_days: selectedRow.leave_days, 
+            leave_type: selectedRow.leave_type,
+            user_id:selectedRow.user_id, 
+          }));
+        }
+      });
+    } else {
+      alert('Rejection reason is required!');
+    }
   };
+  
   const columns = [
     {
       field: 'actions',
@@ -72,13 +86,46 @@ function LeaveStatus() {
           {isAdminMode && params.row.status === 'Pending' ? (
             <>
                 <IconButton
-                onClick={() => dispatch(updateLeaveStatus({requestId: params.row.id, newStatus:'Approved'}))}
-                color="primary" aria-label="approve"  > <CheckIcon /> </IconButton>{/* Approval Icon */}
+  onClick={() => {
+    dispatch(updateLeaveStatus({
+      requestId: params.row.id,
+      newStatus: 'Approved',
+      leave_days: params.row.leave_days, // Extra field
+      leave_type: params.row.leave_type, // Extra field
+      user_id:  params.row.user_id, // Extra field
+
+    }));
+  }}
+  color="primary"
+  aria-label="approve"
+>
+  <CheckIcon />
+</IconButton>
+{/* Approval Icon */}
               
-                <IconButton
-                onClick={() => handleReject(params.row.id)}
-                color="secondary" aria-label="reject" >
-                <CloseIcon /> </IconButton> {/* Rejection Icon */}
+<IconButton
+  onClick={() => {
+    const reason = window.prompt('Enter the reason for rejecting this leave request:');
+    if (reason) {
+      dispatch(updateLeaveStatus({
+        requestId: params.row.id,
+        newStatus: 'Rejected',
+        rejectReason: reason,
+        leave_days: params.row.leave_days, // Extra field
+        leave_type: params.row.leave_type, // Extra field
+        user_id:  params.row.user_id, // Extra field
+
+      }));
+    } else {
+      alert('Rejection reason is required!');
+    }
+  }}
+  color="secondary"
+  aria-label="reject"
+>
+  <CloseIcon />
+</IconButton>
+ {/* Rejection Icon */}
             </>
                 
           ) : (

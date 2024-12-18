@@ -137,7 +137,10 @@ router.get('/', async (req, res) => {
 
   router.put('/update-leave-status/:id', async (req, res) => {
     const { id } = req.params; // Extract 'id' from route parameters
-    const { status, reject_reason } = req.body; // Extract 'status' and 'reject_reason' from request body
+    console.log("id:", id);
+    console.log("Request body:", req.body);
+
+    const { status, reject_reason , leave_days, leave_type, user_id  } = req.body; // Extract 'status' and 'reject_reason' from request body
     
     try {
       const result = await pool.query(
@@ -149,8 +152,19 @@ router.get('/', async (req, res) => {
         // If no rows were updated, send a 404 response
         return res.status(404).send('Leave application not found or no changes made');
       }
+      if (status === 'Rejected') {
+        // Dynamically increment the leave_type column by leave_days
+        const updateLeaveDataQuery = `
+          UPDATE leave_data
+          SET ${leave_type} = ${leave_type} + $1
+          WHERE user_id = $2
+        `;
   
-      res.send('Leave status updated successfully'); // Success response
+        await pool.query(updateLeaveDataQuery, [leave_days, user_id]);
+        console.log(`${leave_type} increased by ${leave_days} for user_id: ${user_id}`);
+      }
+  
+      res.send(`Leave status updated successfully ${status}`);
     } catch (error) {
       console.error('Error updating leave status:', error); // Log any error
       res.status(500).send('Internal Server Error'); // Error response
